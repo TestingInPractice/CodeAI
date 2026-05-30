@@ -60,17 +60,17 @@ mkdir -p ~/.config/opencode
 
 ---
 
-## Prioritet (precedence)
+## Precedence (загрузка правил)
 
-OpenCode загружает правила в порядке:
+OpenCode загружает правила в порядке (первое совпадение побеждает в каждой категории):
 
 ```
-1. AGENTS.md в проекте (walk up от текущей директории)
-2. ~/.config/opencode/AGENTS.md
-3. ~/.claude/CLAUDE.md (если нет AGENTS.md)
+1. AGENTS.md или CLAUDE.md — walk up от cwd до корня
+2. ~/.config/opencode/AGENTS.md (глобальные)
+3. ~/.claude/CLAUDE.md (fallback, если нет AGENTS.md на шагах 1-2)
 ```
 
-Первый найденный файл побеждает в своей категории. Если есть `AGENTS.md` — `CLAUDE.md` игнорируется.
+**Важно:** OpenCode ищет первый файл по пути вверх, а НЕ merge'ит все найденные как Claude Code. Разные AGENTS.md в разных каталогах не суммируются — подхватывается ближайший к cwd.
 
 ---
 
@@ -177,9 +177,9 @@ export OPENCODE_DISABLE_CLAUDE_CODE_SKILLS=1 # только skills
 ## Что OpenCode НЕ делает (в отличие от Codex)
 
 | Фича Codex | В OpenCode |
-|---|---|
+|---|---|---|
 | `AGENTS.override.md` (подмена файла на том же уровне) | ❌ |
-| Walk от корня до cwd с merge снизу вверх | ❌ — только корень проекта |
+| Walk от корня до cwd с merge снизу вверх | ❌ — first-match, не merge |
 | `project_doc_fallback_filenames` (кастомные имена) | ❌ |
 | `project_doc_max_bytes` (лимит 32 KiB) | ❌ — нет жёсткого лимита |
 

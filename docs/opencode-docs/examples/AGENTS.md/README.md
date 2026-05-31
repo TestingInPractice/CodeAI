@@ -14,3 +14,4 @@
 | `08-workflow-orchestration.md` | Workflow orchestration (Boris Cherny): планы, уроки, subagents |
 | `08-workflow-orchestration-EXPLAINED.md` | Построчный разбор gist Boris Cherny: зачем каждая строка |
 | `09-java-best-practices.md` | Java-разработка: SOLID, TDD, architecture, Maven, exception handling |
+| `10-python-best-practices.md` | Python-разработка: ruff, pytest, FastAPI, Pydantic, uv |

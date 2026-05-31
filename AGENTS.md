@@ -49,6 +49,15 @@ bash scripts/build-loop/build-loop.sh --project /path/to/your-project
 # 3. Декомпозировать spec на фазы
 bash scripts/build-loop/build-loop.sh --project /path/to/your-project --decompose-only
 
-# 4. Запустить Ralph Loop (требуется Claude Code)
+# 4a. Ralph Loop (Claude Code — автоматически)
 bash scripts/build-loop/build-loop.sh --project /path/to/your-project --run-only
+
+# 4b. Ralph Loop (OpenCode — фаза за фазой в диалоге)
+bash scripts/build-loop/decompose.sh --project /path/to/your-project
+# AI читает spec, имплементирует фазу, помечает "completed" в phases.json,
+# повторяет для следующей фазы.
+# Команды для AI:
+#   bash scripts/build-loop/next-phase.sh --project .      — узнать следующую фазу
+#   bash scripts/build-loop/run-loop.sh --project . --phase <id> --print-prompt  — получить промпт фазы
+# Никакого Claude CLI не нужно.
 ```

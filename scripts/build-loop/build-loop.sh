@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 --project <path> [--setup-only] [--decompose-only] [--run-only]"
+  echo "Usage: $0 --project <path> [--setup-only] [--decompose-only] [--run-only] [--status]"
   exit 1
 }
 
@@ -11,10 +11,11 @@ MODE="full"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --project|-p)    PROJECT="$2"; shift 2 ;;
-    --setup-only)    MODE="setup"; shift ;;
-    --decompose-only) MODE="decompose"; shift ;;
-    --run-only)      MODE="run"; shift ;;
+    --project|-p)     PROJECT="$2"; shift 2 ;;
+    --setup-only)     MODE="setup"; shift ;;
+    --decompose-only)  MODE="decompose"; shift ;;
+    --run-only)       MODE="run"; shift ;;
+    --status)         MODE="status"; shift ;;
     *) usage ;;
   esac
 done
@@ -40,8 +41,14 @@ case "$MODE" in
     ;;
   decompose)
     bash "$BUILD_LOOP_DIR/decompose.sh" --project "$PROJECT"
+    echo ""
+    echo "Next:"
+    echo "  bash $BUILD_LOOP_DIR/next-phase.sh --project \"$PROJECT\""
     ;;
   run)
+    bash "$BUILD_LOOP_DIR/run-loop.sh" --project "$PROJECT"
+    ;;
+  status)
     bash "$BUILD_LOOP_DIR/run-loop.sh" --project "$PROJECT"
     ;;
   full)

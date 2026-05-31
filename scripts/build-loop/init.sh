@@ -78,16 +78,28 @@ fi
 # AGENTS.md for the project — tells OpenCode to run Build Loop
 if [ ! -f "$PROJECT/AGENTS.md" ]; then
   cat > "$PROJECT/AGENTS.md" << 'AGENTS'
-# Build Loop project
+# Build Loop project (OpenCode)
 
 You are a Build Loop orchestrator. Work in this project only.
 
 ## Workflow
 
 1. Read `docs/specs/` — understand goals, contracts, acceptance criteria
-2. If `.build-loop/phases.json` is empty, run GSD to decompose specs into phases
-3. Execute Ralph Loop: for each pending phase, generate a prompt from `docs/specs/`,
-   delegate to a sub-agent, verify, and update `.build-loop/phases.json`
+2. If `.build-loop/phases.json` is empty or `{"phases":[]}`:
+   ```
+   bash scripts/build-loop/decompose.sh --project .
+   ```
+3. Execute Ralph Loop — for each phase:
+   ```
+   bash scripts/build-loop/next-phase.sh --project .
+   bash scripts/build-loop/run-loop.sh --project . --phase <id> --print-prompt
+   ```
+   — Implement the phase according to spec
+   — Verify against acceptance criteria
+   — Mark complete:
+   ```
+   bash scripts/build-loop/run-loop.sh --project . --mark-complete <id>
+   ```
 4. When all phases complete — report summary
 
 ## Source of Truth

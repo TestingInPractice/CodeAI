@@ -2,17 +2,20 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 --project <path> [--phase <id>]"
+  echo "Usage: $0 --project <path> [--phase <id>] [--print-prompt] [--mark-complete]"
   exit 1
 }
 
 PROJECT=""
 PHASE_ID=""
+MODE="status"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --project|-p) PROJECT="$2"; shift 2 ;;
-    --phase)      PHASE_ID="$2"; shift 2 ;;
+    --project|-p)      PROJECT="$2"; shift 2 ;;
+    --phase)           PHASE_ID="$2"; shift 2 ;;
+    --print-prompt)    MODE="prompt"; shift ;;
+    --mark-complete)   MODE="complete"; PHASE_ID="${2:-}"; shift 2; if [ -z "$PHASE_ID" ]; then echo "Error: --mark-complete requires phase id"; usage; fi ;;
     *) usage ;;
   esac
 done
@@ -31,156 +34,130 @@ if [ ! -f "$PHASES_FILE" ]; then
   exit 1
 fi
 
-# Check for claude CLI
-if ! command -v claude &>/dev/null; then
-  echo "Error: 'claude' CLI not found. Build Loop headless mode requires Claude Code."
+find_spec_file() {
+  local dir="$1"
+  for f in "$dir"/*.md "$dir"/*.MD; do
+    if [ -f "$f" ]; then
+      echo "$f"
+      return 0
+    fi
+  done
   echo ""
-  echo "Alternative: run the Ralph Loop inside an OpenCode session with AGENTS.md from init.sh."
-  exit 1
-fi
+}
 
-echo "=== Build Loop: Ralph Loop ==="
+read_phase() {
+  local id="$1"
+  python3 -c "
+import json, sys
+with open('$PHASES_FILE') as f:
+    data = json.load(f)
+for p in data.get('phases', []):
+    if str(p.get('id')) == '$id' or str(p.get('id')) == '$id':
+        print(json.dumps(p))
+        sys.exit(0)
+print('NOT_FOUND')
+"
+}
 
 generate_prompt() {
   local phase_name="$1"
-  local goals contracts criteria context
+  local spec_content
 
-  goals=$(cat "$SPECS_DIR/goals.md" 2>/dev/null || echo "No goals.md")
-
-  contracts=""
-  if [ -f "$SPECS_DIR/contracts/api.md" ]; then
-    contracts=$(cat "$SPECS_DIR/contracts/api.md")
+  spec_content=$(find_spec_file "$SPECS_DIR")
+  if [ -n "$spec_content" ]; then
+    spec_content=$(cat "$spec_content")
+  else
+    spec_content="Spec file not found in $SPECS_DIR"
   fi
-  if [ -f "$SPECS_DIR/contracts/data-models.md" ]; then
-    models=$(cat "$SPECS_DIR/contracts/data-models.md")
-    contracts="$contracts"$'\n\n'"$models"
-  fi
-
-  criteria=$(cat "$SPECS_DIR/acceptance-criteria.md" 2>/dev/null || echo "No acceptance-criteria.md")
 
   cat << PROMPT
 You are executing phase "$phase_name" of the project.
 
-### Goals:
-$goals
-
-### Contracts:
-$contracts
-
-### Acceptance Criteria:
-$criteria
+### Full Spec:
+$spec_content
 
 ### Task:
-1. Take acceptance criteria as tests — write them first (TDD)
-2. Implement code according to contracts
-3. Verify: all acceptance criteria pass
+1. Read the full spec above.
+2. Understand which part of it corresponds to phase "$phase_name".
+3. Implement everything required for this phase.
+4. Verify against the acceptance criteria in the spec.
 
-If architecture decisions are needed — use GStack role voting.
+When done, run:
+  bash scripts/build-loop/run-loop.sh --project "$PROJECT" --mark-complete <phase-id>
+to mark this phase as completed and proceed to the next phase.
 PROMPT
 }
 
-run_phase() {
-  local phase_id="$1"
-  local phase_name="$2"
-  local prompt
-
-  echo ""
-  echo "--- Phase $phase_id: $phase_name ---"
-
-  prompt=$(generate_prompt "$phase_name")
-
-  echo "Delegating to headless session..."
-  claude -p "$prompt" --model claude-sonnet-4-20250514 > "$STATE_DIR/phase-${phase_id}-result.txt" 2>&1
-
-  echo "Phase $phase_id complete. Result saved to .build-loop/phase-${phase_id}-result.txt"
-}
-
-if [ -n "$PHASE_ID" ]; then
-  # Run single phase
-  phase_name=$(jq -r ".phases[] | select(.id == $PHASE_ID) | .name" "$PHASES_FILE")
-  if [ -z "$phase_name" ] || [ "$phase_name" = "null" ]; then
-    echo "Error: phase $PHASE_ID not found in phases.json"
-    exit 1
-  fi
-  run_phase "$PHASE_ID" "$phase_name"
-else
-  # Run all pending phases in order
-  python3 -c "
+case "$MODE" in
+  prompt)
+    if [ -z "$PHASE_ID" ]; then
+      echo "Error: --print-prompt requires --phase <id>"
+      exit 1
+    fi
+    phase_data=$(read_phase "$PHASE_ID")
+    if [ "$phase_data" = "NOT_FOUND" ]; then
+      echo "Error: phase $PHASE_ID not found in phases.json"
+      exit 1
+    fi
+    phase_name=$(echo "$phase_data" | python3 -c "import json,sys; print(json.load(sys.stdin).get('name','Unknown'))")
+    echo ""
+    echo "╔═══════════════════════════════════════════════╗"
+    echo "║  Phase $PHASE_ID: $phase_name"
+    echo "╚═══════════════════════════════════════════════╝"
+    echo ""
+    echo "--- Phase Details ---"
+    echo "$phase_data" | python3 -c "
 import json, sys
-
-with open('$PHASES_FILE') as f:
-    data = json.load(f)
-
-phases = data.get('phases', [])
-pending = [p for p in phases if p.get('status') == 'pending']
-
-if not pending:
-    print('No pending phases found')
-    sys.exit(0)
-
-print(f'Found {len(pending)} pending phases')
-
-# Check dependencies — simple topological order
-completed_ids = {p['id'] for p in phases if p.get('status') == 'completed'}
-
-for phase in pending:
-    deps = phase.get('depends_on', [])
-    missing = [d for d in deps if d not in completed_ids]
-    if missing:
-        print(f'  Phase {phase[\"id\"]} ({phase[\"name\"]}) waits for phases {missing}')
-        continue
-
-    print(f'  Phase {phase[\"id\"]} ({phase[\"name\"]}) is ready')
-" 2>&1 || echo "python3 not available — run phases manually"
-
-  # Iterate
-  python3 -c "
-import json, subprocess, sys
-
-with open('$PHASES_FILE') as f:
-    data = json.load(f)
-
-phases = data.get('phases', [])
-completed_ids = {p['id'] for p in phases if p.get('status') == 'completed'}
-
-for phase in phases:
-    if phase.get('status') != 'pending':
-        continue
-    deps = phase.get('depends_on', [])
-    missing = [d for d in deps if d not in completed_ids]
-    if missing:
-        print(f'Skipping phase {phase[\"id\"]} — deps {missing} not met')
-        continue
-
-    pid = phase['id']
-    pname = phase['name']
-    print(f'Running phase {pid}: {pname}')
-
-    prompt_script = subprocess.run(
-        ['bash', '$0', '--project', '$PROJECT', '--phase', str(pid), '--generate-prompt-only'],
-        capture_output=True, text=True
-    )
-
-    result = subprocess.run(
-        ['claude', '-p', prompt_script.stdout],
-        capture_output=True, text=True
-    )
-
-    with open(f'$STATE_DIR/phase-{pid}-result.txt', 'w') as f:
-        f.write(result.stdout)
-        if result.stderr:
-            f.write('\n--- stderr ---\n')
-            f.write(result.stderr)
-
-    # Mark completed
-    phase['status'] = 'completed'
-    completed_ids.add(pid)
-
-    with open('$PHASES_FILE', 'w') as f:
-        json.dump(data, f, indent=2)
-
-    print(f'Phase {pid} completed')
+d = json.load(sys.stdin)
+for k,v in d.items():
+    if k == 'id': continue
+    print(f'  {k}: {v}')
 "
-fi
+    echo ""
+    echo "--- Phase Prompt ---"
+    generate_prompt "$phase_name"
+    ;;
 
-echo "=== Ralph Loop complete ==="
+  complete)
+    phase_data=$(read_phase "$PHASE_ID")
+    if [ "$phase_data" = "NOT_FOUND" ]; then
+      echo "Error: phase $PHASE_ID not found in phases.json"
+      exit 1
+    fi
+    phase_name=$(echo "$phase_data" | python3 -c "import json,sys; print(json.load(sys.stdin).get('name','Unknown'))")
+    python3 -c "
+import json
+with open('$PHASES_FILE') as f:
+    data = json.load(f)
+for p in data['phases']:
+    if str(p.get('id')) == '$PHASE_ID':
+        p['status'] = 'completed'
+        break
+with open('$PHASES_FILE', 'w') as f:
+    json.dump(data, f, indent=2)
+"
+    echo "✅ Phase $PHASE_ID \"$phase_name\" marked as completed."
+    echo ""
+    echo "Check next phase:"
+    echo "  bash scripts/build-loop/next-phase.sh --project \"$PROJECT\""
+    ;;
+
+  status)
+    echo "=== Phases Status ==="
+    python3 -c "
+import json
+with open('$PHASES_FILE') as f:
+    data = json.load(f)
+phases = data.get('phases', [])
+if not phases:
+    print('  No phases found. Run decompose.sh first.')
+else:
+    for p in phases:
+        deps = p.get('depends_on', [])
+        dep_str = f' (depends on: {deps})' if deps else ''
+        status = p.get('status', 'pending')
+        icon = '✅' if status == 'completed' else '⏳' if status == 'in_progress' else '⬜'
+        print(f'  {icon} Phase {p[\"id\"]}: {p.get(\"name\", \"?\")} [{status}]{dep_str}')
+"
+    ;;
+esac

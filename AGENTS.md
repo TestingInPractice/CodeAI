@@ -17,3 +17,20 @@ For a comprehensive walkthrough on setting up an OpenCode-powered project, see:
 - @docs/opencode-guide/08-development-process.md — Delivery cycles, quality gates, review
 - @docs/opencode-guide/09-project-example-step-1.md — AGENTS.md template, stage-based delivery, prompts
 - @docs/opencode-guide/09-project-example-step-2.md — /docs structure for online shop
+
+## Build Loop — запуск пет-проекта
+
+Скрипты в `scripts/build-loop/` автоматизируют полный пайплайн:
+
+```bash
+# 1. Установить инструменты и инициализировать проект
+bash scripts/build-loop/build-loop.sh --project /path/to/your-project
+
+# 2. Заполнить docs/specs/ в своём проекте (1 файл или структуру)
+
+# 3. Декомпозировать spec на фазы
+bash scripts/build-loop/build-loop.sh --project /path/to/your-project --decompose-only
+
+# 4. Запустить Ralph Loop
+bash scripts/build-loop/build-loop.sh --project /path/to/your-project --run-only
+```

@@ -428,25 +428,171 @@ claude -p "$(cat prompt_for_phase_1.md)"
 
 ---
 
-## Интеграция с GStack
+## Setup: установка всех трёх репозиториев
 
-GStack устанавливается бесплатно (MIT, 105k★):
+Build Loop требует GStack, GSD и Superpowers. Устанавливаются они по-разному:
+
+| Инструмент | Репозиторий | Лицензия | Установка | ⭐ |
+|------------|-------------|----------|-----------|---|
+| **GStack** | garrytan/gstack | MIT | `git clone + ./setup` | 105k |
+| **GSD** | open-gsd/gsd-core | MIT | `npx @opengsd/get-shit-done-redux` | 1.9k |
+| **Superpowers** | obra/superpowers | MIT | Плагин в opencode.json | 213k |
+
+### Единый скрипт установки
 
 ```bash
-git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git ~/.claude/skills/gstack
-cd ~/.claude/skills/gstack && ./setup --host opencode
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "=== Установка GStack ==="
+if [ ! -d "$HOME/.claude/skills/gstack" ]; then
+  git clone --single-branch --depth 1 \
+    https://github.com/garrytan/gstack.git "$HOME/.claude/skills/gstack"
+  cd "$HOME/.claude/skills/gstack"
+  ./setup --host opencode
+else
+  echo "GStack уже установлен"
+fi
+
+echo "=== Установка GSD ==="
+npx @opengsd/get-shit-done-redux@latest --profile=core
+
+echo "=== Установка Superpowers ==="
+# Добавить в opencode.json:
+# {
+#   "plugin": ["superpowers@git+https://github.com/obra/superpowers.git"]
+# }
+echo "Добавьте плагин в opencode.json (см. инструкцию выше)"
+
+echo "=== Готово ==="
 ```
 
-В Build Loop GStack используется через `task()`:
+Сохранить как `scripts/setup-build-loop.sh` и запустить один раз.
+
+---
+
+## Оркестрация: как Build Loop вызывает каждый инструмент
+
+Build Loop не «запускает» репозитории напрямую. Каждый из трёх фреймворков вызывается в своём контексте:
+
+### 1. GStack — голосование по архитектурным вопросам
+
+**Когда вызывается:** внутри headless-сессии (Superpower), когда нужно принять решение.
+
+**Как вызывается:** через `task()` в OpenCode, который загружает GStack skill и запускает голосование ролями.
 
 ```
-Когда headless-сессия (Superpower) упирается в архитектурный вопрос:
-  1. Superpower: "Какую БД выбрать? PostgreSQL или SQLite?"
-  2. → делегирует в GStack: task(GStack, roles=[CEO, Eng, Designer])
-  3. GStack: голосование ролями → победитель: PostgreSQL
-  4. → возвращает решение в Superpower
-  5. Superpower: продолжает исполнение с выбранным решением
+Поток:
+  Superpower (фаза N) → вопрос "Какую БД выбрать?"
+    → task(GStack, prompt="CEO, Eng, Designer: голосуйте PostgreSQL vs SQLite")
+    → GStack: 3 роли голосуют
+    → результат: PostgreSQL (2/3 голосов)
+    → Superpower: продолжает с PostgreSQL
 ```
+
+**В коде оркестратора:**
+```
+function resolve_architecture_decision(question, roles):
+    result = task("gstack", {
+        "roles": roles,
+        "question": question,
+        "vote": true
+    })
+    return result.winner
+```
+
+### 2. GSD — декомпозиция spec на фазы
+
+**Когда вызывается:** один раз, после того как GStack наполнил `docs/specs/`.
+
+**Как вызывается:** через `npx` (CLI) в отдельной headless-сессии.
+
+```
+Поток:
+  Оркестратор → npx @opengsd/get-shit-done-redux
+    → GSD читает docs/specs/ (goals.md, contracts/, acceptance-criteria.md)
+    → GSD анализирует зависимости между acceptance criteria
+    → GSD генерирует phases.json
+    → оркестратор получает phases.json
+```
+
+**В коде оркестратора:**
+```
+function decompose_specs():
+    result = run_headless(
+        "npx @opengsd/get-shit-done-redux decompose docs/specs/"
+    )
+    phases = parse_json(result.stdout)
+    write("phases.json", phases)
+    return phases
+```
+
+### 3. Superpowers — исполнение каждой фазы
+
+**Когда вызывается:** для каждой `pending` фазы в Ralph Loop.
+
+**Как вызывается:** Superpowers — не CLI-инструмент, а **среда исполнения**. Каждая headless-сессия запускается с Superpowers, активированным через плагин. Superpowers автоматически перехватывает запрос и проводит его через свой пайплайн (TDD → код → verify).
+
+```
+Поток:
+  Оркестратор → claude -p / task() с промптом фазы
+    → сессия стартует с Superpowers (плагин)
+    → Superpowers: тесты → код → verify
+    → если вопрос → делегирует в GStack (п.1)
+    → результат: готовая фаза
+```
+
+**В коде оркестратора:**
+```
+function execute_phase(phase):
+    prompt = generate_prompt("docs/specs/", phase, previous_results)
+    result = run_headless(prompt)    # Superpowers активен через плагин
+    phase.status = "completed"
+    phase.result = result.summary
+    write("phases.json", phases)
+    return result
+```
+
+### Полная схема вызовов
+
+```
+                 ┌─────────────────────────┐
+                 │      GStack CLI          │
+                 │  git clone + ./setup     │
+                 │  → symlinks SKILL.md     │
+                 └─────────────────────────┘
+                          │ task()
+                          ▼
+┌──────────────┐  ┌─────────────────────────┐
+│  Superpowers  │  │      GStack (skill)     │
+│  Плагин       │  │  Голосование ролями     │
+│  opencode.json │  │  CEO/Eng/Designer      │
+│  Авто-перехват│  │  Возвращает решение     │
+└──────────────┘  └─────────────────────────┘
+        │                      ▲
+        │ task() с промптом     │ вызов при вопросе
+        ▼                      │
+┌────────────────────────────────────────────┐
+│            Ralph Loop (Orchestrator)        │
+│  ┌──────────────────────────────────────┐   │
+│  │ 1. npx GSD decompose docs/specs/     │   │
+│  │ 2. for phase in phases:             │   │
+│  │ 3.   prompt = generate_prompt()     │   │
+│  │ 4.   result = task(prompt)          │   │
+│  │ 5.   phase.result = result          │   │
+│  └──────────────────────────────────────┘   │
+└────────────────────────────────────────────┘
+        │
+        │ task() с промптом (Superpowers активен)
+        ▼
+┌────────────────────────────────────────────┐
+│          Headless Session #N               │
+│  Superpowers (плагин) → TDD → код → verify │
+│  Если вопрос → task(GStack)                │
+└────────────────────────────────────────────┘
+```
+
+Итого: GStack вызывается через `task()`, GSD — через `npx` в headless-сессии, Superpowers — активен всегда как плагин (среда исполнения, не явный вызов).
 
 ---
 

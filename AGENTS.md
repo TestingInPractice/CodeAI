@@ -1,26 +1,44 @@
-# AGENTS.md — Project Contract for CodeAI
+# AGENTS.md — Knowledge Repository (Read-Only)
 
-## Purpose
-This repository collects knowledge, references, and frameworks around spec-driven AI development: GStack, GSD, Superpowers, Ralph Loop, and OpenCode project setup.
+This is a **reference collection** of frameworks, tools, and workflows for spec-driven AI development.
+Do NOT modify files here. Do NOT execute projects in this repo.
+Use this as a knowledge source when working on external projects.
 
-## Quick reference — OpenCode setup guide
+---
 
-For a comprehensive walkthrough on setting up an OpenCode-powered project, see:
-- @docs/opencode-guide/00-overview.md — Introduction and goals
-- @docs/opencode-guide/01-quick-start.md — Installation and first config
-- @docs/opencode-guide/02-project-anatomy.md — Reference repo structure
-- @docs/opencode-guide/03-agents-and-skills.md — Subagents and playbooks
-- @docs/opencode-guide/04-config-and-permissions.md — opencode.json and permissions
-- @docs/opencode-guide/05-team-workflows.md — Plan/Build cycle, specs-first
-- @docs/opencode-guide/06-mcp-and-integrations.md — MCP servers, OAuth
-- @docs/opencode-guide/07-best-practices.md — Model strategy, cost, onboarding
-- @docs/opencode-guide/08-development-process.md — Delivery cycles, quality gates, review
-- @docs/opencode-guide/09-project-example-step-1.md — AGENTS.md template, stage-based delivery, prompts
-- @docs/opencode-guide/09-project-example-step-2.md — /docs structure for online shop
+## Документация (все разделы)
+
+| Раздел | Описание |
+|--------|----------|
+| `docs/gstack/` | GStack — role-based brainstorming, голосование CEO/Eng/Designer, browser daemon |
+| `docs/superpowers/` | Superpowers — subagent-driven development, TDD, 2-stage review |
+| `docs/gsd/` | GSD — борьба с context rot, декомпозиция spec на фазы |
+| `docs/build-loop/` | Build Loop — оркестратор GStack → GSD → Superpower → Ralph Loop |
+| `docs/obsidian/` | Obsidian Hybrid Search MCP — cross-session memory |
+| `docs/astronomer-agents/` | Astronomer/agents — MCP для Airflow |
+| `docs/microservices-patterns/` | 11-step microservices evolution |
+| `docs/coding-agent-harness/` | 6 компонентов coding agent harness |
+| `docs/test-generator-suite/` | TGS — LLM-генератор API-тестов |
+| `docs/opencode-guide/` | OpenCode setup guide (9 файлов) |
+| `docs/transcripts/` | Стенограммы видео |
+| `docs/examples/AGENTS.md/` | 10 примеров AGENTS.md под разные сценарии |
+| `scripts/build-loop/` | Скрипты для запуска Build Loop |
+
+## AGENTS.md / CLAUDE.md и ecosystem
+
+- @docs/opencode-docs/30-agentsmd.md — общий формат AGENTS.md
+- @docs/opencode-docs/37-agentsmd-opencode.md — AGENTS.md для OpenCode
+- @docs/opencode-docs/38-claudemd-best-practices.md — Claude Code / OpenCode best practices
+- @docs/opencode-docs/39-cursor-rules.md — портативность AGENTS.md между инструментами
+- @docs/opencode-docs/40-skillopt.md — Microsoft SkillOpt: оптимизация AGENTS.md
+- @docs/opencode-docs/41-modern-web-guidance.md — Chrome Modern Web Guidance
+- @docs/opencode-docs/42-codex-maxxing-patterns.md — Jason Liu patterns
+- @docs/opencode-docs/43-agents-best-practices-skill.md — agents-best-practices skill
+- @docs/opencode-docs/44-creating-agent-skills-video.md — создание SKILL.md
 
 ## Build Loop — запуск пет-проекта
 
-Скрипты в `scripts/build-loop/` автоматизируют полный пайплайн:
+Скрипты в `scripts/build-loop/` — для запуска на **внешнем проекте**. Не запускать в этом репозитории.
 
 ```bash
 # 1. Установить инструменты и инициализировать проект
@@ -31,6 +49,6 @@ bash scripts/build-loop/build-loop.sh --project /path/to/your-project
 # 3. Декомпозировать spec на фазы
 bash scripts/build-loop/build-loop.sh --project /path/to/your-project --decompose-only
 
-# 4. Запустить Ralph Loop
+# 4. Запустить Ralph Loop (требуется Claude Code)
 bash scripts/build-loop/build-loop.sh --project /path/to/your-project --run-only
 ```

@@ -2,7 +2,7 @@
 
 > **Источник:** Доклад Eric Tech  
 > **Видео:** https://www.youtube.com/watch?v=BlTpG51x94w  
-> **Стенограмма:** Авто-сгенерированная английская дорожка видео
+> **Стенограмма:** [Полная стенограмма видео](../transcripts/gstack-gsd-superpower-workflow-transcript.md)
 
 ---
 

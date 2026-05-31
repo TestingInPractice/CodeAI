@@ -35,29 +35,31 @@ Build Loop решает это радикально: **ни одна фаза н
 ## Архитектура
 
 ```
-                     ┌─────────────────────────┐
-                     │    GStack (Spec + Vote)   │
-                     │  Brainstorming, уточнение │
-                     │  Role-based голосование   │
-                     │  CEO / Eng / Designer     │
-                     └──────────┬──────────────┘
-                                │ spec.md
-                     ┌──────────▼──────────────┐
-                     │  GSD (Phase Decomp)      │
-                     │  Анализ spec.md          │
-                     │  Декомпозиция на фазы    │
-                     │  Запись в phases.json    │
-                     └──────────┬──────────────┘
+                     ┌──────────────────────────┐
+                     │     GStack (Spec + Vote)   │
+                     │  Brainstorming, уточнение  │
+                     │  Role-based голосование    │
+                     │  CEO / Eng / Designer      │
+                     └──────────┬───────────────┘
+                                │ docs/specs/
+                     ┌──────────▼───────────────┐
+                     │  GSD (Phase Decomp)       │
+                     │  Анализ docs/specs/       │
+                     │  Декомпозиция на фазы     │
+                     │  Каждая < 50% контекста   │
+                     │  Запись в phases.json     │
+                     └──────────┬───────────────┘
                                 │ phases.json
-                     ┌──────────▼──────────────┐
+                     ┌──────────▼───────────────┐
                      │  Ralph Loop (Orchestrator)│
                      │  Читает phases.json       │
                      │  Находит первую pending   │
                      │  Генерирует prompt на лету │
+                     │  из docs/specs/           │
                      │  Делегирует в headless     │
                      │  Ждёт результат            │
                      │  Обновляет статус         │
-                     └──────────┬──────────────┘
+                     └──────────┬───────────────┘
                                 │
                ┌────────────────┼────────────────┐
                │                │                │
@@ -75,8 +77,8 @@ Build Loop решает это радикально: **ни одна фаза н
 
 | Уровень | Компонент | Роль |
 |---------|-----------|------|
-| **Верхний** | GStack | Уточнение требований, голосование ролями, создание spec.md |
-| **Средний** | GSD | Декомпозиция spec.md на фазы (< 50% контекста каждая) |
+| **Верхний** | GStack | Уточнение требований, голосование ролями, наполнение `docs/specs/` |
+| **Средний** | GSD | Декомпозиция `docs/specs/` на фазы (< 50% контекста каждая) |
 | **Нижний** | Superpower | Исполнение каждой фазы: TDD → реализация → verify |
 | **Оркестратор** | Ralph Loop (Build Loop) | Читает phases.json, делегирует фазы в headless-сессии, обновляет статус |
 
@@ -86,10 +88,10 @@ Build Loop решает это радикально: **ни одна фаза н
 
 Build Loop — это skill, который:
 
-1. Принимает `spec.md` (созданный GStack или написанный вручную)
-2. Использует GSD для декомпозиции spec на фазы
+1. Принимает `docs/specs/` (созданный GStack или написанный вручную)
+2. Использует GSD для анализа `docs/specs/` и декомпозиции на фазы
 3. Записывает фазы в `phases.json`
-4. Запускает Ralph Loop: итеративно находит первую `pending` фазу, генерирует для неё промпт, отправляет в `claude -p` (или `task()` в OpenCode)
+4. Запускает Ralph Loop: итеративно находит первую `pending` фазу, генерирует для неё промпт из `docs/specs/`, отправляет в `claude -p` (или `task()` в OpenCode)
 5. Каждая headless-сессия исполняет фазу через Superpower (TDD → код → verify)
 6. Если в процессе возникают архитектурные вопросы — сессия делегирует их в GStack для role-based голосования
 7. После завершения фазы — обновляет `phases.json` и переходит к следующей
@@ -100,7 +102,7 @@ Ralph Loop (псевдокод):
 phases = read("phases.json")
 for phase in phases where phase.status == "pending":
     context = read_results_of_dependencies(phase)
-    prompt = generate_prompt(spec.md, phase, context)
+    prompt = generate_prompt("docs/specs/", phase, context)
     result = run_headless(prompt)
     phase.status = "completed"
     phase.result = result
@@ -144,7 +146,7 @@ IF запрос начинается с "добавь / измени / почи�
 
 | Аспект | Greenfield |
 |--------|------------|
-| Spec | Создаётся с нуля через GStack |
+| Spec | `docs/specs/` создаётся с нуля через GStack |
 | Фазы | Весь проект, от 5 до 16+ фаз |
 | Архитектура | Build Loop решает |
 | Риск | Низкий (ничего не сломать) |
@@ -170,65 +172,126 @@ Build Loop делает:
 
 | Аспект | Brownfield |
 |--------|------------|
-| Spec | Берётся из существующего кода |
+| Spec | Извлекается из существующего кода в `docs/specs/` |
 | Фазы | Только добавляемая фича, 1-2 фазы |
 | Архитектура | Build Loop подстраивается |
 | Риск | Высокий (не сломать existing) |
 
 ---
 
-## State-файл: Подход B — Spec + генерация промптов на лету
+## State-файл: `docs/specs/` как единый source of truth
 
-Build Loop использует **гибридный подход**:
+В Build Loop **только одна точка ответственности** — директория `docs/specs/`. Никакого плоского `spec.md`.
 
-1. **spec.md** — единственный человекочитаемый артефакт. Пишется человеком или генерируется GStack.
-2. **phases.json** — только имена фаз и зависимости. Промпты не хранятся.
-3. **Перед каждой фазой** GSD-агент читает spec.md + результаты завершённых фаз и **генерирует промпт динамически**.
+### Структура `docs/specs/`
 
-### spec.md
+```
+docs/specs/
+├── goals.md                # бизнес-цели, пользовательские потребности
+├── contracts/
+│   ├── api.md              # эндпоинты, реквесты/респонсы
+│   └── data-models.md      # схемы БД, интерфейсы, типы
+└── acceptance-criteria.md  # проверяемые условия для done
+```
 
+**`goals.md`:**
 ```markdown
-# CRM System
-- Auth: JWT, email/password, roles (admin, manager, user)
-- Customers: CRUD, поиск, пагинация, импорт из CSV
-- Orders: создание, статусы, история, привязка к customer
-- Reports: дашборд с графиками, экспорт в PDF/Excel
+# CRM System — Goals
+- Авторизация: только зарегистрированные пользователи
+- Управление клиентами: CRUD, поиск, импорт из CSV
+- Заказы: создание, смена статусов, история
+- Отчёты: дашборд с графиками, экспорт PDF/Excel
 - Tech stack: Next.js 15, PostgreSQL, Prisma, Tailwind
+```
+
+**`contracts/api.md`:**
+```markdown
+# API Contracts
+## Auth
+POST /api/auth/register { email, password } → { token, user }
+POST /api/auth/login    { email, password } → { token, user }
+POST /api/auth/refresh  { refreshToken }    → { token }
+
+## Customers
+GET    /api/customers           ?page&search → { items, total }
+POST   /api/customers           { name, email, phone } → Customer
+GET    /api/customers/:id                       → Customer
+PUT    /api/customers/:id       { name, email } → Customer
+DELETE /api/customers/:id                       → { ok }
+POST   /api/customers/import    { csv }         → { imported, errors }
+```
+
+**`contracts/data-models.md`:**
+```markdown
+# Data Models
+User:     id, email, passwordHash, role (admin|manager|user), createdAt
+Customer: id, name, email, phone, createdBy, createdAt
+Order:    id, customerId, status, total, items[], createdAt
+Report:   id, type, period, config, generatedAt, fileUrl
+```
+
+**`acceptance-criteria.md`:**
+```markdown
+# Acceptance Criteria
+## Auth
+- [ ] Регистрация с email+password создаёт пользователя
+- [ ] Логин возвращает JWT + refresh token
+- [ ] Невалидные credentials → 401
+- [ ] Refresh-token возвращает новый JWT
+
+## Customers
+- [ ] CRUD для customers работает
+- [ ] Поиск по name/email возвращает релевантные результаты
+- [ ] Импорт CSV обрабатывает 10 000 записей < 30s
 ```
 
 ### phases.json (генерируется GSD-агентом)
 
+Фазы ссылаются на конкретные секции `docs/specs/`:
+
 ```json
 {
-  "spec_file": "spec.md",
   "phases": [
     {
       "id": 1,
       "name": "project-setup",
+      "acceptance_criteria": ["docs/specs/acceptance-criteria.md#project-setup"],
       "depends_on": [],
       "status": "pending"
     },
     {
       "id": 2,
       "name": "auth-module",
+      "acceptance_criteria": ["docs/specs/acceptance-criteria.md#auth"],
+      "contracts": ["docs/specs/contracts/api.md#auth"],
+      "models": ["docs/specs/contracts/data-models.md#User"],
       "depends_on": [1],
       "status": "pending"
     },
     {
       "id": 3,
       "name": "customers",
+      "acceptance_criteria": ["docs/specs/acceptance-criteria.md#customers"],
+      "contracts": ["docs/specs/contracts/api.md#customers"],
+      "models": ["docs/specs/contracts/data-models.md#Customer"],
       "depends_on": [1, 2],
       "status": "pending"
     },
     {
       "id": 4,
       "name": "orders",
+      "acceptance_criteria": ["docs/specs/acceptance-criteria.md#orders"],
+      "contracts": ["docs/specs/contracts/api.md#orders"],
+      "models": ["docs/specs/contracts/data-models.md#Order"],
       "depends_on": [1, 2, 3],
       "status": "pending"
     },
     {
       "id": 5,
       "name": "reports",
+      "acceptance_criteria": ["docs/specs/acceptance-criteria.md#reports"],
+      "contracts": ["docs/specs/contracts/api.md#reports"],
+      "models": ["docs/specs/contracts/data-models.md#Report"],
       "depends_on": [1, 2],
       "status": "pending"
     }
@@ -236,10 +299,22 @@ Build Loop использует **гибридный подход**:
 }
 ```
 
-### Генерация промпта на лету (псевдокод)
+### Генерация промпта на лету из `docs/specs/`
+
+Перед каждой фазой агент-оркестратор:
+
+1. Читает `goals.md` — контекст "зачем"
+2. Читает `contracts/` — какие контракты относятся к этой фазе
+3. Читает `acceptance-criteria.md` — какие критерии для этой фазы
+4. Читает результаты предыдущих фаз
+5. Собирает промпт динамически
 
 ```
-function generate_prompt(spec.md, phase, previous_results):
+function generate_prompt(specs_dir, phase, previous_results):
+    goals       = read(specs_dir + "/goals.md")
+    contracts   = read_sections(specs_dir + "/contracts/", phase.contracts)
+    criteria    = read_sections(specs_dir + "/acceptance-criteria.md", phase.acceptance_criteria)
+
     context = ""
     for dep in phase.depends_on:
         result = previous_results[dep]
@@ -247,30 +322,35 @@ function generate_prompt(spec.md, phase, previous_results):
 
     prompt = f"""
     Ты выполняешь фазу "{phase.name}" проекта.
-    
-    ### Spec проекта:
-    {spec.md}
-    
+
+    ### Goals проекта:
+    {goals}
+
+    ### Контракты для этой фазы:
+    {contracts}
+
+    ### Acceptance Criteria:
+    {criteria}
+
     ### Что уже сделано:
     {context}
-    
+
     ### Задача:
-    1. Прочитай spec для фазы "{phase.name}"
-    2. Напиши тесты (Superpower-style: тесты до кода)
-    3. Реализуй
-    4. Verify
-    
+    1. Прими acceptance criteria как тесты — напиши их первыми (TDD)
+    2. Реализуй код по контрактам
+    3. Verify: все acceptance criteria проходят
+
     Если нужны архитектурные решения — используй GStack голосование.
     """
-    
+
     return prompt
 ```
 
-**Почему подход B, а не A (с готовыми промптами):**
+**Преимущества:**
+- Одна точка ответственности — `docs/specs/`
+- Acceptance criteria напрямую конвертируются в тесты (никакой интерпретации)
 - Промпт всегда актуален под текущее состояние проекта
-- Можно менять spec.md в процессе — промпты подстроятся
-- spec.md остаётся человекочитаемым, phases.json — минимальным
-- Дополнительные токены на генерацию промпта — это плата за гибкость
+- Можно менять `docs/specs/` в процессе — промпты подстроятся
 
 ---
 
@@ -312,14 +392,14 @@ claude -p "$(cat prompt_for_phase_1.md)"
 ## Оркестратор: 10% контекста
 
 Оркестратор (основная сессия Claude/OpenCode) содержит только:
-- `spec.md` — требования
+- `docs/specs/` — цели, контракты, acceptance criteria
 - `phases.json` — статус фаз
 - Логику цикла (Ralph Loop)
 
 ```
 Контекст оркестратора (~10%):
 ┌──────────────────────────────────────────────┐
-│ spec.md (3-5% контекста)                      │
+│ docs/specs/ (3-5% контекста)                 │
 │ phases.json (1-2% контекста)                  │
 │ Цикл: for phase in phases (1-2% контекста)    │
 │ Текущий phase.id + status (1-2% контекста)    │
@@ -390,4 +470,4 @@ Build Loop берёт лучшее из трёх фреймворков:
 - **GSD** — для декомпозиции spec на фазы и борьбы с context rot
 - **Superpower** — для TDD-исполнения каждой фазы
 
-И добавляет оркестратор (Ralph Loop), который делает процесс полностью автономным: spec.md → фазы → headless-сессии → готовый проект.
+И добавляет оркестратор (Ralph Loop), который делает процесс полностью автономным: `docs/specs/` → фазы → headless-сессии → готовый проект.

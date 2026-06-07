@@ -20,9 +20,9 @@ Use this as a knowledge source when working on external projects.
 | `docs/coding-agent-harness/` | 6 компонентов coding agent harness |
 | `docs/test-generator-suite/` | TGS — LLM-генератор API-тестов |
 | `docs/opencode-guide/` | OpenCode setup guide (9 файлов) |
-| `docs/transcripts/` | Стенограммы видео |
 | `docs/examples/AGENTS.md/` | 10 примеров AGENTS.md под разные сценарии |
 | `scripts/build-loop/` | Скрипты для запуска Build Loop |
+| `scripts/build-loop/transcripts/` | Стенограммы и тезисы видео |
 
 ## AGENTS.md / CLAUDE.md и ecosystem
 

@@ -41,6 +41,18 @@
 | 📎 `docs/opencode-docs/build-loop/49-build-loop-reference.md` | Build Loop — GStack → GSD → Superpower → Ralph Loop |
 | 📎 `docs/opencode-docs/coding-agent-harness/47-components-of-a-coding-agent.md` | 6 компонентов coding agent harness |
 
+### AI в практике (интервью)
+| Файл | Описание |
+|------|----------|
+| `01-frameworks/2025-vitaly-kharisov-ai-frontend-transcript.md` | 🎥 «Я 99.99% кода пишу нейронкой» — Виталий Харисов (Яндекс, БЭМ) |
+| `01-frameworks/2025-vitaly-kharisov-ai-frontend-thesis.md` | 📋 Тезисы: X10 в OS vs X4 на работе, LLM как архитектурный партнёр, AGENTS.md-подход |
+| `01-frameworks/2025-polyakov-test-generation-transcript.md` | 🎥 Автогенерация тестов в IDE: RAG + LLM — Александр Поляков (Сбер) |
+| `01-frameworks/2025-polyakov-test-generation-thesis.md` | 📋 RAG в IDE-плагине: BM25 → векторный поиск → генерация. 68% тестов без правок |
+| `01-frameworks/2025-LLM-better-than-you-transcript.md` | 🎥 LLM пишет код лучше тебя. Ты просто не умеешь его настраивать |
+| `01-frameworks/2025-LLM-better-than-you-thesis.md` | 📋 Qwen 3 27B, настройка агента, AGENTS.md, MCP (Context7, SearchNGX, RAG) |
+| `01-frameworks/2025-AI-code-unsupportable-transcript.md` | 🎥 Почему ИИ-код становится неподдерживаемым |
+| `01-frameworks/2025-AI-code-unsupportable-thesis.md` | 📋 Тактика vs Стратегия, 80% правило, архитектура с первого дня |
+
 ---
 
 ## 📂 02. MCP (Model Context Protocol)
@@ -89,6 +101,9 @@
 | `04-best-practices/2025-07-26_AI-products-systematic-improvement.md` | 🎥 Системное улучшение AI-продуктов |
 | `04-best-practices/2025-07-26_AI-products-systematic-improvement-thesis.md` | 📋 Eval-driven development, итеративный подход, human-in-the-loop |
 | `04-best-practices/coding-agent-harness-architecture.md` | 📄 6 компонентов кодинг-агента: контекст, инструменты, память, субагенты |
+| `04-best-practices/2026-02-12_Context-Engineering-thesis.md` | 📄 Context Engineering — data teams как команды контекста для AI-агентов |
+| `04-best-practices/2025-LLM-testing-guide-transcript.md` | 🎥 Тестирование AI и LLM систем — полный гайд для QA Engineer |
+| `04-best-practices/2025-LLM-testing-guide-thesis.md` | 📋 3 столпа качества, LLM-as-a-judge, RAG-тестирование |
 | 📎 `docs/opencode-docs/40-skillopt.md` | SkillOpt — автоматическая оптимизация AGENTS.md (Microsoft) |
 | 📎 `docs/opencode-docs/41-modern-web-guidance.md` | Chrome Modern Web Guidance |
 | 📎 `docs/opencode-docs/42-codex-maxxing-patterns.md` | Jason Liu Codex Maxxing паттерны |
@@ -112,6 +127,7 @@
 | Файл | Описание |
 |------|----------|
 | `06-tools/browse-sh.md` | browse.sh — Browser CLI и каталог веб-скиллов (npm install -g browse) |
+| `06-tools/obsidian-guide.md` | Obsidian для AI-агентов: CLI, Headless Sync, AGENTS.md, интеграция |
 | `06-tools/microsoft-skills.md` | microsoft/skills — 174 скилла для Azure AI агентов |
 | `06-tools/tgs-test-generator-suite.md` | TGS — генератор API-тестов на LLM |
 | 📎 `docs/skills/` | Azure SDK skills (Python, TypeScript, Java, .NET, Rust, Foundry и др.) |

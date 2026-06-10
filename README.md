@@ -47,8 +47,50 @@ docs/
 Проект настроен как Obsidian-ваулт. Для работы:
 
 1. Установить Obsidian: `brew install --cask obsidian`
-2. Открыть папку `scripts/build-loop/docs/` как ваулт (или всю корневую)
+2. Открыть `/Users/halapinvv/Documents/Agents/CodeAI/` как ваулт
 3. Использовать `INDEX.md` как точку входа
+
+### Obsidian Hybrid Search (OHS)
+
+Гибридный поиск по ваулту для AI-агентов и CLI: BM25 + fuzzy title + векторные эмбеддинги (Xenova/multilingual-e5-small), слияние через RRF.
+
+**Установка:**
+
+```bash
+npm install -g obsidian-hybrid-search
+```
+
+**Использование в CLI:**
+
+```bash
+# Поиск из папки ваулта
+obsidian-hybrid-search search "запрос"
+
+# С JSON-выводом (для скриптов и агентов)
+obsidian-hybrid-search search "GSD" --json --limit 5
+
+# Режимы
+obsidian-hybrid-search search --mode semantic "запрос"
+obsidian-hybrid-search search --mode fulltext "запрос"
+obsidian-hybrid-search search --mode title "запрос"
+
+# Переиндексация
+obsidian-hybrid-search reindex
+```
+
+**MCP-сервер** (для Claude Code / OpenCode):
+
+Автоматически подхватывается из `.mcp.json` в корне проекта. Предоставляет 4 инструмента:
+- `search` — гибридный поиск (hybrid/semantic/fulltext/title)
+- `read` — чтение заметок с метаданными, ссылками и backlinks
+- `reindex` — переиндексация
+- `status` — статус индекса
+
+Не требует запущенного Obsidian — индексирует файлы напрямую. Работает офлайн, без API-ключа.
+
+**Obsidian-плагин** (для GUI):
+
+Установить через Community Plugins → "Hybrid Search" (требует установленного CLI).
 
 ## Как использовать AGENTS.md
 

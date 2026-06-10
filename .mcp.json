@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "obsidian-hybrid-search": {
+      "command": "obsidian-hybrid-search-mcp",
+      "env": {
+        "OBSIDIAN_VAULT_PATH": "/Users/halapinvv/Documents/Agents/CodeAI"
+      }
+    }
+  }
+}

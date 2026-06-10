@@ -153,7 +153,18 @@
 
 ---
 
-## 📂 08. Build Loop (наш проект)
+## 📂 08. Внешние референсы (dot_ai)
+
+**↪️ [[references/dot-ai/README|Все материалы категории →]]**
+
+| Раздел | Описание |
+|--------|----------|
+| `references/dot-ai/best_practice/` (9 файлов) | Best practices от davjdk/dot_ai — skills, rules, CLAUDE.md, sub-agents, hooks и др. |
+| `references/dot-ai/researches/` (5 файлов) | Research notes — governance, eval-plan, transformer-limitations |
+
+---
+
+## 📂 09. Build Loop (наш проект)
 
 | Файл | Описание |
 |------|----------|

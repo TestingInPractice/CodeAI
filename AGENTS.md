@@ -62,7 +62,11 @@ Use this as a knowledge source when working on external projects.
 - `scripts/build-loop/docs/06-tools/microsoft-skills.md` — microsoft/skills
 - `scripts/build-loop/docs/06-tools/tgs-test-generator-suite.md` — TGS Habr
 
-### 08. Build Loop (наш проект)
+### 08. Внешние референсы (dot_ai)
+- `scripts/build-loop/docs/references/dot-ai/` — docs from davjdk/dot_ai (best_practice/ + researches/, 14 files)
+- `scripts/build-loop/docs/references/dot-ai/README.md` — MOC with wikilinks
+
+### 09. Build Loop (наш проект)
 - `scripts/build-loop/docs/INDEX.md` — главный INDEX
 - `scripts/build-loop/` — shell-скрипты Build Loop
 - `docs/opencode-docs/build-loop/49-build-loop-reference.md` — Build Loop reference

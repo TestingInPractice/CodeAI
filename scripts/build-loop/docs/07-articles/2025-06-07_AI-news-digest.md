@@ -708,4 +708,3 @@ Title: Новая СИСТЕМА Кода! Google ПЕРЕНВЕРНУЛ Инд�
 
 **↪️ 2025-06-07_AI-news-digest-thesis:** [[2025-06-07_AI-news-digest-thesis]]
 
-**↪️ Категория:** [[README]]

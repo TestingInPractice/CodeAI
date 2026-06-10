@@ -48,6 +48,6 @@ aliases: [AI Code Unsupportable тезисы]
 
 ---
 
-**↪️ 2025-AI-code-unsupportable-transcript:** [[2025-AI-code-unsupportable-transcript]]
+**↪️ 2025-AI-code-unsupportable-transcript:** [[2025-AI-code-unsupportable]]
 
 **↪️ Категория:** [[README]]

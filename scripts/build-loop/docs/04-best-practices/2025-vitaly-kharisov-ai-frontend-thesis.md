@@ -34,6 +34,6 @@ aliases: [Kharisov AI Frontend тезисы]
 
 ---
 
-**↪️ 2025-vitaly-kharisov-ai-frontend-transcript:** [[2025-vitaly-kharisov-ai-frontend-transcript]]
+**↪️ 2025-vitaly-kharisov-ai-frontend-transcript:** [[2025-vitaly-kharisov-ai-frontend]]
 
 **↪️ Категория:** [[README]]

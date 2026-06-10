@@ -63,6 +63,6 @@ aliases: [Polyakov Test Generation тезисы]
 
 ---
 
-**↪️ 2025-polyakov-test-generation-transcript:** [[2025-polyakov-test-generation-transcript]]
+**↪️ 2025-polyakov-test-generation-transcript:** [[2025-polyakov-test-generation]]
 
 **↪️ Категория:** [[README]]

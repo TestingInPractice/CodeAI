@@ -37,4 +37,3 @@ aliases: [AI News Digest тезисы]
 
 **↪️ 2025-06-07_AI-news-digest:** [[2025-06-07_AI-news-digest]]
 
-**↪️ Категория:** [[README]]

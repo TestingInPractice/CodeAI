@@ -43,18 +43,6 @@
 | 📎 `docs/opencode-docs/build-loop/49-build-loop-reference.md` | Build Loop — GStack → GSD → Superpower → Ralph Loop |
 | 📎 `docs/opencode-docs/coding-agent-harness/47-components-of-a-coding-agent.md` | 6 компонентов coding agent harness |
 
-### AI в практике (интервью)
-| Файл | Описание |
-|------|----------|
-| `01-frameworks/2025-vitaly-kharisov-ai-frontend-transcript.md` | 🎥 «Я 99.99% кода пишу нейронкой» — Виталий Харисов (Яндекс, БЭМ) |
-| `01-frameworks/2025-vitaly-kharisov-ai-frontend-thesis.md` | 📋 Тезисы: X10 в OS vs X4 на работе, LLM как архитектурный партнёр, AGENTS.md-подход |
-| `01-frameworks/2025-polyakov-test-generation-transcript.md` | 🎥 Автогенерация тестов в IDE: RAG + LLM — Александр Поляков (Сбер) |
-| `01-frameworks/2025-polyakov-test-generation-thesis.md` | 📋 RAG в IDE-плагине: BM25 → векторный поиск → генерация. 68% тестов без правок |
-| `01-frameworks/2025-LLM-better-than-you-transcript.md` | 🎥 LLM пишет код лучше тебя. Ты просто не умеешь его настраивать |
-| `01-frameworks/2025-LLM-better-than-you-thesis.md` | 📋 Qwen 3 27B, настройка агента, AGENTS.md, MCP (Context7, SearchNGX, RAG) |
-| `01-frameworks/2025-AI-code-unsupportable-transcript.md` | 🎥 Почему ИИ-код становится неподдерживаемым |
-| `01-frameworks/2025-AI-code-unsupportable-thesis.md` | 📋 Тактика vs Стратегия, 80% правило, архитектура с первого дня |
-
 ---
 
 ## 📂 02. MCP (Model Context Protocol)
@@ -112,6 +100,14 @@
 | `04-best-practices/2026-02-12_Context-Engineering-thesis.md` | 📄 Context Engineering — data teams как команды контекста для AI-агентов |
 | `04-best-practices/2025-LLM-testing-guide-transcript.md` | 🎥 Тестирование AI и LLM систем — полный гайд для QA Engineer |
 | `04-best-practices/2025-LLM-testing-guide-thesis.md` | 📋 3 столпа качества, LLM-as-a-judge, RAG-тестирование |
+| `04-best-practices/2025-vitaly-kharisov-ai-frontend.md` | 🎥 «Я 99.99% кода пишу нейронкой» — Виталий Харисов (Яндекс, БЭМ) |
+| `04-best-practices/2025-vitaly-kharisov-ai-frontend-thesis.md` | 📋 Тезисы: X10 в OS vs X4 на работе, LLM как архитектурный партнёр |
+| `04-best-practices/2025-polyakov-test-generation.md` | 🎥 Автогенерация тестов в IDE: RAG + LLM — Александр Поляков (Сбер) |
+| `04-best-practices/2025-polyakov-test-generation-thesis.md` | 📋 RAG в IDE-плагине: BM25 → векторный поиск → генерация. 68% тестов без правок |
+| `04-best-practices/2025-LLM-better-than-you.md` | 🎥 LLM пишет код лучше тебя. Ты просто не умеешь его настраивать |
+| `04-best-practices/2025-LLM-better-than-you-thesis.md` | 📋 Qwen 3 27B, настройка агента, AGENTS.md, MCP |
+| `04-best-practices/2025-AI-code-unsupportable.md` | 🎥 Почему ИИ-код становится неподдерживаемым |
+| `04-best-practices/2025-AI-code-unsupportable-thesis.md` | 📋 Тактика vs Стратегия, 80% правило, архитектура с первого дня |
 | 📎 `docs/opencode-docs/40-skillopt.md` | SkillOpt — автоматическая оптимизация AGENTS.md (Microsoft) |
 | 📎 `docs/opencode-docs/41-modern-web-guidance.md` | Chrome Modern Web Guidance |
 | 📎 `docs/opencode-docs/42-codex-maxxing-patterns.md` | Jason Liu Codex Maxxing паттерны |
@@ -146,10 +142,12 @@
 
 ## 📂 07. Статьи и референсы
 
+**↪️ [[07-articles/README|Все материалы категории →]]
+
 | Файл | Описание |
 |------|----------|
-| `01-frameworks/2025-06-07_AI-news-digest.md` | 🎥 AI-дайджест: Google, Anthropic Claude 4.8, Vertex AI |
-| `01-frameworks/2025-06-07_AI-news-digest-thesis.md` | 📋 Тезисы новостей |
+| `07-articles/2025-06-07_AI-news-digest.md` | 🎥 AI-дайджест: Google, Anthropic Claude 4.8, Vertex AI |
+| `07-articles/2025-06-07_AI-news-digest-thesis.md` | 📋 Тезисы новостей |
 | 📎 `docs/opencode-docs/07-zen.md` | OpenCode Zen |
 | 📎 `docs/opencode-docs/08-share.md` | OpenCode Share |
 

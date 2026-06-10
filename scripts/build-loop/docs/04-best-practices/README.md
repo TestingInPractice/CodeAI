@@ -1,16 +1,24 @@
 # Best Practices
 
-Контекст-инжиниринг, Hermes, eval-driven development, coding agent harness.
+Интервью, практики, Hermes, eval-driven, контекст-инжиниринг.
 
 ## Содержание
 
-- [[2025-07-26_AI-products-systematic-improvement-thesis]] — Простые подходы к системному улучшению AI-продуктов — тезисы
+- [[2025-07-26_AI-products-systematic-improvement-thesis]] — ---
 - [[2025-07-26_AI-products-systematic-improvement]] — Простые подходы к системному улучшению AI-продуктов (стенограмма)
-- [[2025-07-26_Hermes-agent-thesis]] — Hermes agent. Как ставить задачи агенту? — тезисы
+- [[2025-07-26_Hermes-agent-thesis]] — ---
 - [[2025-07-26_Hermes-agent]] — Hermes agent. Как ставить задачи агенту? (стенограмма)
-- [[2025-LLM-testing-guide-thesis]] — Тестирование AI и LLM систем — полный гайд для QA Engineer — тезисы
+- [[2025-AI-code-unsupportable-thesis]] — ---
+- [[2025-AI-code-unsupportable]] — Разработка стала очень быстрой, но с
+- [[2025-LLM-better-than-you-thesis]] — ---
+- [[2025-LLM-better-than-you]] — Я вот сейчас делаю контент про LLM и
+- [[2025-LLM-testing-guide-thesis]] — ---
 - [[2025-LLM-testing-guide-transcript]] — Всем привет. Если вы работаете в QA или
-- [[2026-02-12_Context-Engineering-thesis]] — Context Engineering — тезисы
+- [[2025-polyakov-test-generation-thesis]] — ---
+- [[2025-polyakov-test-generation]] — Я Миша Новатарский, сегодня эксперт на
+- [[2025-vitaly-kharisov-ai-frontend-thesis]] — ---
+- [[2025-vitaly-kharisov-ai-frontend]] — Невозможно уже сейчас быть в индустрии,
+- [[2026-02-12_Context-Engineering-thesis]] — ---
 - [[coding-agent-harness-architecture]] — Как кодинг-агенты используют инструменты, память и контекст
 
 ---

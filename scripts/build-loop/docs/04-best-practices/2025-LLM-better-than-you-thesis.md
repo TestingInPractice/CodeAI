@@ -54,6 +54,6 @@ aliases: [LLM Better Than You тезисы]
 
 ---
 
-**↪️ 2025-LLM-better-than-you-transcript:** [[2025-LLM-better-than-you-transcript]]
+**↪️ 2025-LLM-better-than-you-transcript:** [[2025-LLM-better-than-you]]
 
 **↪️ Категория:** [[README]]

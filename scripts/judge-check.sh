@@ -94,6 +94,13 @@ DOTAI_BP=$(find "$DOCS/references/dot-ai/best_practice" -maxdepth 1 -name "*.md"
 DOTAI_RS=$(find "$DOCS/references/dot-ai/researches" -maxdepth 1 -name "*.md" 2>/dev/null | wc -l)
 check "dot_ai refs: best_practice ($DOTAI_BP files) and researches ($DOTAI_RS files)" test "$DOTAI_BP" -ge 9 -a "$DOTAI_RS" -ge 5
 
+# Claims tables in thesis files
+CLAIMS_FILES=$(grep -rl '^|.*Утверждение.*Источник.*Уровень' "$DOCS" --include="*.md" 2>/dev/null | wc -l)
+check "Files with Claims table (≥ 3)" test "$CLAIMS_FILES" -ge 3
+
+# CLAIMS.md exists in build-loop
+check "CLAIMS.md in 08-build-loop" test -f "$DOCS/08-build-loop/CLAIMS.md"
+
 # Transcript ↔ thesis pairs linked
 PAIRS=0
 for thesis in $(find "$DOCS" -name "*-thesis.md"); do

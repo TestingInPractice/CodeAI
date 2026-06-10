@@ -1233,3 +1233,9 @@ perplexity, но всё равно спрашиваю,
 >> [фыркает]
 [смех]
 >> Recording Так.
+
+---
+
+**↪️ 2025-vitaly-kharisov-ai-frontend-thesis:** [[2025-vitaly-kharisov-ai-frontend-thesis]]
+
+**↪️ Категория:** [[README]]

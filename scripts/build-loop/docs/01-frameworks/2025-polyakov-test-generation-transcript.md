@@ -1026,3 +1026,9 @@ Brain я пробовал.
 >> всё будет хорошо.
 >> Саш, спасибо. Ребят, давайте
 поблагодарим Сашу.
+
+---
+
+**↪️ 2025-polyakov-test-generation-thesis:** [[2025-polyakov-test-generation-thesis]]
+
+**↪️ Категория:** [[README]]

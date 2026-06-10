@@ -111,3 +111,7 @@ Obsidian vault как **Source of Truth контекста**:
 - поиск по смыслу, а не по точному совпадению
 - backlinks/outgoing links для графа решений
 ```
+
+---
+
+**↪️ Категория:** [[README]]

@@ -1,3 +1,7 @@
+---
+tags: [gsd, opencode]
+aliases: [GSD for OpenCode тезисы]
+---
 # GSD for OpenCode: Структурированные тезисы для работы с агентом
 
 **Источник:** Владилен Минин (на английском), "GSD for OpenCode — полный обзор и демонстрация"
@@ -158,3 +162,9 @@ GSD Quick <description>
 | State file | Файл с прогрессом (requirements done / total) |
 | Research | Автоматический web fetch для актуализации знаний |
 | Context drop | Очистка диалога перед новой командой (файлы — долгосрочная память) |
+
+---
+
+**↪️ 2025-07-26_GSD-for-OpenCode:** [[2025-07-26_GSD-for-OpenCode]]
+
+**↪️ Категория:** [[README]]

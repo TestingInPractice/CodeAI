@@ -13,3 +13,7 @@
 - **Core Principles:** Simplicity First, No Laziness, Minimal Impact
 
 **Self-Improvement Loop** — запись уроков после каждой ошибки. Ключевой паттерн для continuous improvement AI-assisted разработки.
+
+---
+
+**↪️ Категория:** [[README]]

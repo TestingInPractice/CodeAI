@@ -1,3 +1,4 @@
 .obsidian/
 .DS_Store
-.obsidian-hybrid-search.db
+.obsidian-hybrid-search.db*
+docs/_astro/

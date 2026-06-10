@@ -1,3 +1,7 @@
+---
+tags: [test-generation, rag]
+aliases: [Polyakov Test Generation тезисы]
+---
 # Автогенерация тестов в IDE: RAG + LLM — Александр Поляков (Сбер) — тезисы
 
 **Источник:** YouTube, доклад на конференции
@@ -56,3 +60,9 @@
 - Потенциал: до **50% экономии времени** на разработку автотестов
 - Плагин опубликован: GitHub + JetBrains Marketplace (базовый алгоритм, in-memory)
 - Дальнейшие планы: ревью существующих тестов, актуализация при изменении ручных тестов, общая RAG-база по всей компании
+
+---
+
+**↪️ 2025-polyakov-test-generation-transcript:** [[2025-polyakov-test-generation-transcript]]
+
+**↪️ Категория:** [[README]]

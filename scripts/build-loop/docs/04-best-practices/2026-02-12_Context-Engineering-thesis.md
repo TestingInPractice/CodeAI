@@ -1,3 +1,7 @@
+---
+tags: [context-engineering, best-practices]
+aliases: [Context Engineering тезисы]
+---
 # Context Engineering — тезисы
 
 **Источник:** datatalks.ru, перевод статьи "Data teams should become context teams"
@@ -47,3 +51,7 @@
 - [microsoft/ai-agents-for-beginners](https://github.com/microsoft/ai-agents-for-beginners)
 - [Astronomer — AI agent tooling for Airflow](https://github.com/astronomer/agents)
 - [data-formulator (Microsoft)](https://github.com/microsoft/data-formulator)
+
+---
+
+**↪️ Категория:** [[README]]

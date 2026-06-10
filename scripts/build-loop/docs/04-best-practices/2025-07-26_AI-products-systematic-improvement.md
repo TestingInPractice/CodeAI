@@ -1876,3 +1876,8 @@
 [69:10] вам интересно, присоединяйтесь.
 [69:13] Всё, всем спасибо,
 [69:15] >> всем пока.
+---
+
+**↪️ 2025-07-26_AI-products-systematic-improvement-thesis:** [[2025-07-26_AI-products-systematic-improvement-thesis]]
+
+**↪️ Категория:** [[README]]

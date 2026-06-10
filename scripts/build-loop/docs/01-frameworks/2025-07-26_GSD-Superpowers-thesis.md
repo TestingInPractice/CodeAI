@@ -1,3 +1,7 @@
+---
+tags: [gsd, superpowers]
+aliases: [GSD Superpowers тезисы]
+---
 # GSD & Superpowers: Структурированные тезисы для работы с агентом
 
 **Источник:** Владилен Минин, "Vibe coding мёртв. Что пришло на замену в 2026. GSD & Superpowers"
@@ -212,3 +216,9 @@ Using Superpowers (со спекой) →
 | Long-term memory | Контекст в Markdown-файлах (не в диалоге) |
 | Research | Web fetch для актуализации документации |
 | GSD Quick | Быстрый фикс без полного цикла |
+
+---
+
+**↪️ 2025-07-26_GSD-Superpowers:** [[2025-07-26_GSD-Superpowers]]
+
+**↪️ Категория:** [[README]]

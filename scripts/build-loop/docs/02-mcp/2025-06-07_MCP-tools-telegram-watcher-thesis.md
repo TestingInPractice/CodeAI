@@ -1,3 +1,7 @@
+---
+tags: [mcp, mcp-tools]
+aliases: [MCP Tools Telegram Watcher тезисы]
+---
 # Инструменты для MCP сервера (MCP tools) — структурированные тезисы
 
 **Источник:** YouTube, "Инструменты для MCP сервера (MCP tools)"
@@ -150,3 +154,9 @@ claude mcp add --transport http \
 | Completion | Запрос доп. информации у пользователя |
 | MCP Inspector | Браузерный инструмент для дебага MCP |
 | Plan mode | Режим AI-агента: сначала план, потом код |
+
+---
+
+**↪️ 2025-06-07_MCP-tools-telegram-watcher:** [[2025-06-07_MCP-tools-telegram-watcher]]
+
+**↪️ Категория:** [[README]]

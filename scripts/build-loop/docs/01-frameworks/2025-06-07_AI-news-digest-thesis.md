@@ -1,3 +1,7 @@
+---
+tags: [ai-news, дайджест]
+aliases: [AI News Digest тезисы]
+---
 # AI-новости: Google, Anthropic, OpenAI — дайджест
 
 **Источник:** YouTube, "Новая СИСТЕМА Кода! Google ПЕРЕНВЕРНУЛ Индустрию! Antigravity 2.0 Сломал ВСЁ!"
@@ -28,3 +32,9 @@
 - Бесплатное AI-образование (Anthropic Academy + Google курсы)
 - Новые модели Claude на Vertex AI
 - Спекуляции: Claude Opus 4.8 / Sonnet 4.8
+
+---
+
+**↪️ 2025-06-07_AI-news-digest:** [[2025-06-07_AI-news-digest]]
+
+**↪️ Категория:** [[README]]

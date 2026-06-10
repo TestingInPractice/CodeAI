@@ -16,3 +16,7 @@
 **Установка:** `npx skills add microsoft/skills`
 
 **Важный принцип:** "Use skills selectively. Loading all skills causes context rot." — загрузка всех скиллов подряд ведёт к раздуванию контекста.
+
+---
+
+**↪️ Категория:** [[README]]

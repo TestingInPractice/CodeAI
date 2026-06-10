@@ -1148,3 +1148,8 @@
 [20:43] and frankly,
 [20:43] her acceptance testing
 [20:44] is harsher than mine.
+---
+
+**↪️ 2025-07-26_GSD-vs-OpenSpec-thesis:** [[2025-07-26_GSD-vs-OpenSpec-thesis]]
+
+**↪️ Категория:** [[README]]

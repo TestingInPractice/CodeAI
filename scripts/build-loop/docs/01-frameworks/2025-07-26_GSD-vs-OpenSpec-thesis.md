@@ -1,3 +1,7 @@
+---
+tags: [gsd, openspec]
+aliases: [GSD vs OpenSpec тезисы]
+---
 # GSD vs OpenSpec: Структурированные тезисы для работы с агентом
 
 **Источник:** YouTube, "GSD vs OpenSpec — I rebuilt the same app twice"
@@ -174,3 +178,9 @@ $openspec-explore      # Исследовать код
 | Repo baseline | Инженерный scaffolding: тесты, typecheck, lint, скрипты |
 | BMAD | Предыдущий фреймворк — то, чем GSD *должен был быть* |
 | Acceptance pass | Ручное тестирование UI после генерации |
+
+---
+
+**↪️ 2025-07-26_GSD-vs-OpenSpec:** [[2025-07-26_GSD-vs-OpenSpec]]
+
+**↪️ Категория:** [[README]]

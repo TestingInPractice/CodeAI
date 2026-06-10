@@ -843,3 +843,8 @@
 [49:19] later next video or
 [49:22] I'll think about it.
 [49:25] Uh happy coding. [laughter]
+---
+
+**↪️ 2025-07-26_GSD-for-OpenCode-thesis:** [[2025-07-26_GSD-for-OpenCode-thesis]]
+
+**↪️ Категория:** [[README]]

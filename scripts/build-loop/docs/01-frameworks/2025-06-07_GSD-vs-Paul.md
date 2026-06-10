@@ -291,3 +291,8 @@
 [10:56] sitting here and watching and learning,
 [10:57] and I hope to see you guys on the next
 [10:59] one.
+---
+
+**↪️ 2025-06-07_GSD-vs-Paul-thesis:** [[2025-06-07_GSD-vs-Paul-thesis]]
+
+**↪️ Категория:** [[README]]

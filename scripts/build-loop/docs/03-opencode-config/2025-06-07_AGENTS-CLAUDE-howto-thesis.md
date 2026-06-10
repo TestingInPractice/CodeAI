@@ -1,3 +1,7 @@
+---
+tags: [opencode, agents-md, claude-md]
+aliases: [AGENTS CLAUDE howto тезисы]
+---
 # AGENTS.md и CLAUDE.md: как готовить? — структурированные тезисы
 
 **Источник:** YouTube, "AGENTS.md и CLAUDE.md: как готовить?"
@@ -78,3 +82,9 @@
 - Для долгих инструкций лучше использовать `instructions/` директорию (поддерживается OpenCode)
 - OVERRIDE.md в Codex — мощный механизм для проектов со специфическими требованиями
 - Разные агенты имеют разный парсинг — читай документацию своего инструмента
+
+---
+
+**↪️ 2025-06-07_AGENTS-CLAUDE-howto:** [[2025-06-07_AGENTS-CLAUDE-howto]]
+
+**↪️ Категория:** [[README]]

@@ -1,3 +1,7 @@
+---
+tags: [gsd, paul]
+aliases: [GSD vs Paul тезисы]
+---
 # GSD vs Paul: Структурированные тезисы для работы с агентом
 
 **Источник:** YouTube, "GSD vs Paul — 7 Critical Problems with GSD and How Paul Solves Them"
@@ -117,3 +121,9 @@ npx [command from repo]
 | Silent drift | Тихое отклонение от требований без уведомления |
 | Paul | Claude Code плагин для sequential quality-first разработки |
 | Carl | Сопутствующий плагин для custom knowledge domains |
+
+---
+
+**↪️ 2025-06-07_GSD-vs-Paul:** [[2025-06-07_GSD-vs-Paul]]
+
+**↪️ Категория:** [[README]]

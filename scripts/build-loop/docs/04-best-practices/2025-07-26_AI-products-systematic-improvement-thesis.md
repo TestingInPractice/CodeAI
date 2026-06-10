@@ -1,3 +1,7 @@
+---
+tags: [best-practices, eval-driven]
+aliases: [AI Products Systematic Improvement тезисы]
+---
 # Простые подходы к системному улучшению AI-продуктов — тезисы
 
 **Источник:** YouTube, "Простые подходы к системному улучшению AI-продуктов"
@@ -14,3 +18,9 @@
 - **Eval-driven development** — тесты качества как часть CI/CD
 - **Human-in-the-loop** — автоматизация не заменяет человеческую оценку, а усиливает её
 - **Документируй уроки** — каждая ошибка должна становиться тестом или правилом
+
+---
+
+**↪️ 2025-07-26_AI-products-systematic-improvement:** [[2025-07-26_AI-products-systematic-improvement]]
+
+**↪️ Категория:** [[README]]

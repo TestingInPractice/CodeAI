@@ -78,7 +78,7 @@ check "Broken wikilinks = 0 ($BROKEN)" test "$BROKEN" -eq 0
 
 # MOC per category
 MOC_COUNT=0
-for dir in 01-frameworks 02-mcp 03-opencode-config 04-best-practices 06-tools 07-articles 08-build-loop; do
+for dir in 01-frameworks 02-mcp 03-opencode-config 04-best-practices 06-tools 07-articles 08-build-loop references/dot-ai references/hands-on-ai-engineering; do
   if [ -f "$DOCS/$dir/README.md" ]; then
     MOC_COUNT=$((MOC_COUNT + 1))
   fi
@@ -88,6 +88,11 @@ check "MOC notes (categories with README)" test "$MOC_COUNT" -ge 3
 # Frontmatter with tags
 FM_TAGS=$(grep -r '^tags:' "$DOCS" --include="*.md" 2>/dev/null | wc -l)
 check "Files with tags: frontmatter" test "$FM_TAGS" -gt 0
+
+# Dot AI reference structure
+DOTAI_BP=$(find "$DOCS/references/dot-ai/best_practice" -maxdepth 1 -name "*.md" 2>/dev/null | wc -l)
+DOTAI_RS=$(find "$DOCS/references/dot-ai/researches" -maxdepth 1 -name "*.md" 2>/dev/null | wc -l)
+check "dot_ai refs: best_practice ($DOTAI_BP files) and researches ($DOTAI_RS files)" test "$DOTAI_BP" -ge 9 -a "$DOTAI_RS" -ge 5
 
 # Transcript ↔ thesis pairs linked
 PAIRS=0

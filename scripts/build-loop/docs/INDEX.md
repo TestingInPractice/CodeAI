@@ -153,14 +153,15 @@
 
 ---
 
-## 📂 08. Внешние референсы (dot_ai)
+## 📂 08. Внешние референсы
 
-**↪️ [[references/dot-ai/README|Все материалы категории →]]**
+**↪️ [[references/dot-ai/README|dot_ai →]]** | **↪️ [[references/hands-on-ai-engineering/README|Hands-On AI Engineering →]]**
 
 | Раздел | Описание |
 |--------|----------|
 | `references/dot-ai/best_practice/` (9 файлов) | Best practices от davjdk/dot_ai — skills, rules, CLAUDE.md, sub-agents, hooks и др. |
 | `references/dot-ai/researches/` (5 файлов) | Research notes — governance, eval-plan, transformer-limitations |
+| `references/hands-on-ai-engineering/` | 30 AI-агентов + OCR, audio, RAG от Sumanth077 — production-ready примеры с кодом |
 
 ---
 

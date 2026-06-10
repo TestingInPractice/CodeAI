@@ -1,4 +1,5 @@
 Title: Новая СИСТЕМА Кода! Google ПЕРЕНВЕРНУЛ Индустрию! Antigravity 2.0 Сломал ВСЁ! 3 Новых ИИ Anthropic
+Video: https://www.youtube.com/watch?v=ZXhpIEUpRSo
 
 00:00:00 Всем привет. В этом выпуске самые
 00:00:01 главные свежие новости об искусственном

@@ -1,14 +1,19 @@
 ---
 tags: [gsd, superpowers]
 aliases: [GSD Superpowers тезисы]
+date: 2025-07-26
+version: 1.0
+source: 2025-07-26_GSD-Superpowers
 ---
+
+> **Дата:** 2025-07-26
+> **Версия:** 1.0
+> **Источник:** [[2025-07-26_GSD-Superpowers]] — Владилен Минин, "Vibe coding мёртв. Что пришло на замену в 2026. GSD & Superpowers"
+> **Библиография:** [[../bibliography|Библиография]]
+
+
 # GSD & Superpowers: Структурированные тезисы для работы с агентом
 
-**Источник:** Владилен Минин, "Vibe coding мёртв. Что пришло на замену в 2026. GSD & Superpowers"
-**Ссылка:** https://www.youtube.com/watch?v=SOm_F7UtJno
-**Стенограмма:** `docs/transcripts/2025-07-26_GSD-Superpowers.md`
-
----
 
 ## 1. Эволюция: Vibe Coding → Agent Orchestration
 

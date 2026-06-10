@@ -1,14 +1,19 @@
 ---
 tags: [gsd, openspec]
 aliases: [GSD vs OpenSpec тезисы]
+date: 2025-07-26
+version: 1.0
+source: 2025-07-26_GSD-vs-OpenSpec
 ---
+
+> **Дата:** 2025-07-26
+> **Версия:** 1.0
+> **Источник:** [[2025-07-26_GSD-vs-OpenSpec]] — YouTube, "GSD vs OpenSpec — I rebuilt the same app twice"
+> **Библиография:** [[../bibliography|Библиография]]
+
+
 # GSD vs OpenSpec: Структурированные тезисы для работы с агентом
 
-**Источник:** YouTube, "GSD vs OpenSpec — I rebuilt the same app twice"
-**Ссылка:** https://www.youtube.com/watch?v=6FRk19CZSBY
-**Стенограмма:** `docs/transcripts/2025-07-26_GSD-vs-OpenSpec.md`
-
----
 
 ## 1. Сетап теста
 

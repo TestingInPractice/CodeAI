@@ -13,7 +13,7 @@
 - [[2025-LLM-better-than-you-thesis]] — ---
 - [[2025-LLM-better-than-you]] — Я вот сейчас делаю контент про LLM и
 - [[2025-LLM-testing-guide-thesis]] — ---
-- [[2025-LLM-testing-guide-transcript]] — Всем привет. Если вы работаете в QA или
+- [[2025-LLM-testing-guide]] — Всем привет. Если вы работаете в QA или
 - [[2025-polyakov-test-generation-thesis]] — ---
 - [[2025-polyakov-test-generation]] — Я Миша Новатарский, сегодня эксперт на
 - [[2025-vitaly-kharisov-ai-frontend-thesis]] — ---

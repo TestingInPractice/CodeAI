@@ -1,14 +1,19 @@
 ---
 tags: [llm-config, prompt-engineering]
 aliases: [LLM Better Than You тезисы]
+date: 2025
+version: 1.0
+source: 2025-LLM-better-than-you
 ---
+
+> **Дата:** 2025
+> **Версия:** 1.0
+> **Источник:** [[2025-LLM-better-than-you]] — YouTube
+> **Библиография:** [[../bibliography|Библиография]]
+
+
 # LLM пишет код лучше тебя. Ты просто не умеешь его настраивать — тезисы
 
-**Источник:** YouTube
-**Ссылка:** https://www.youtube.com/watch?v=ouA7TjjMjv0
-**Стенограмма:** `scripts/build-loop/docs/01-frameworks/2025-LLM-better-than-you-transcript.md`
-
----
 
 ### Главная идея
 

@@ -1,14 +1,19 @@
 ---
 tags: [ai-code, фронтенд]
 aliases: [Kharisov AI Frontend тезисы]
+date: 2025
+version: 1.0
+source: 2025-vitaly-kharisov-ai-frontend
 ---
+
+> **Дата:** 2025
+> **Версия:** 1.0
+> **Источник:** [[2025-vitaly-kharisov-ai-frontend]] — YouTube, интервью с Виталием Харисовым (создатель БЭМ)
+> **Библиография:** [[../bibliography|Библиография]]
+
+
 # «Я 99.99% кода пишу нейронкой» — Виталий Харисов (Яндекс, БЭМ) — тезисы
 
-**Источник:** YouTube, интервью с Виталием Харисовым (создатель БЭМ)
-**Ссылка:** https://www.youtube.com/watch?v=E3-sZ0LEGDs
-**Стенограмма:** `scripts/build-loop/docs/01-frameworks/2025-vitaly-kharisov-ai-frontend-transcript.md`
-
----
 
 ### Ключевые тезисы
 

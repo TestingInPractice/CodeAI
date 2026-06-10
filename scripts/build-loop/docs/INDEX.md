@@ -98,7 +98,7 @@
 | `04-best-practices/2025-07-26_AI-products-systematic-improvement-thesis.md` | 📋 Eval-driven development, итеративный подход, human-in-the-loop |
 | `04-best-practices/coding-agent-harness-architecture.md` | 📄 6 компонентов кодинг-агента: контекст, инструменты, память, субагенты |
 | `04-best-practices/2026-02-12_Context-Engineering-thesis.md` | 📄 Context Engineering — data teams как команды контекста для AI-агентов |
-| `04-best-practices/2025-LLM-testing-guide-transcript.md` | 🎥 Тестирование AI и LLM систем — полный гайд для QA Engineer |
+| `04-best-practices/2025-LLM-testing-guide.md` | 🎥 Тестирование AI и LLM систем — полный гайд для QA Engineer |
 | `04-best-practices/2025-LLM-testing-guide-thesis.md` | 📋 3 столпа качества, LLM-as-a-judge, RAG-тестирование |
 | `04-best-practices/2025-vitaly-kharisov-ai-frontend.md` | 🎥 «Я 99.99% кода пишу нейронкой» — Виталий Харисов (Яндекс, БЭМ) |
 | `04-best-practices/2025-vitaly-kharisov-ai-frontend-thesis.md` | 📋 Тезисы: X10 в OS vs X4 на работе, LLM как архитектурный партнёр |

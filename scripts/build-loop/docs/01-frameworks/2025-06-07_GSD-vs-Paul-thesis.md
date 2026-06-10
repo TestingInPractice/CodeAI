@@ -1,14 +1,19 @@
 ---
 tags: [gsd, paul]
 aliases: [GSD vs Paul тезисы]
+date: 2025-06-07
+version: 1.0
+source: 2025-06-07_GSD-vs-Paul
 ---
+
+> **Дата:** 2025-06-07
+> **Версия:** 1.0
+> **Источник:** [[2025-06-07_GSD-vs-Paul]] — YouTube, "GSD vs Paul — 7 Critical Problems with GSD and How Paul Solves Them"
+> **Библиография:** [[../bibliography|Библиография]]
+
+
 # GSD vs Paul: Структурированные тезисы для работы с агентом
 
-**Источник:** YouTube, "GSD vs Paul — 7 Critical Problems with GSD and How Paul Solves Them"
-**Ссылка:** https://www.youtube.com/watch?v=MppKHh_MfFc
-**Стенограмма:** `docs/transcripts/2025-06-07_GSD-vs-Paul.md`
-
----
 
 ## 1. Что такое Paul?
 

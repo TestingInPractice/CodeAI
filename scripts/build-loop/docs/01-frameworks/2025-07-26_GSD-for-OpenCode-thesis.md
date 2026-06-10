@@ -1,14 +1,19 @@
 ---
 tags: [gsd, opencode]
 aliases: [GSD for OpenCode тезисы]
+date: 2025-07-26
+version: 1.0
+source: 2025-07-26_GSD-for-OpenCode
 ---
+
+> **Дата:** 2025-07-26
+> **Версия:** 1.0
+> **Источник:** [[2025-07-26_GSD-for-OpenCode]] — Владилен Минин (на английском), "GSD for OpenCode — полный обзор и демонстрация"
+> **Библиография:** [[../bibliography|Библиография]]
+
+
 # GSD for OpenCode: Структурированные тезисы для работы с агентом
 
-**Источник:** Владилен Минин (на английском), "GSD for OpenCode — полный обзор и демонстрация"
-**Ссылка:** https://www.youtube.com/watch?v=zRJ0UWHBjCY
-**Стенограмма:** `docs/transcripts/2025-07-26_GSD-for-OpenCode.md`
-
----
 
 ## 1. Что это?
 

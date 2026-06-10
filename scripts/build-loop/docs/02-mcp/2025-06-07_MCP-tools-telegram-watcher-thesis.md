@@ -1,15 +1,19 @@
 ---
 tags: [mcp, mcp-tools]
 aliases: [MCP Tools Telegram Watcher тезисы]
+date: 2025-06-07
+version: 1.0
+source: 2025-06-07_MCP-tools-telegram-watcher
 ---
+
+> **Дата:** 2025-06-07
+> **Версия:** 1.0
+> **Источник:** [[2025-06-07_MCP-tools-telegram-watcher]] — YouTube, "Инструменты для MCP сервера (MCP tools)"
+> **Библиография:** [[../bibliography|Библиография]]
+
+
 # Инструменты для MCP сервера (MCP tools) — структурированные тезисы
 
-**Источник:** YouTube, "Инструменты для MCP сервера (MCP tools)"
-**Автор:** Let's Code Drew
-**Ссылка:** https://www.youtube.com/watch?v=mBA9Vk1jXDE
-**Стенограмма:** `scripts/build-loop/transcripts/2025-06-07_MCP-tools-telegram-watcher.md`
-
----
 
 ## 1. О чём видео
 

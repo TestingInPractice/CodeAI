@@ -1,14 +1,19 @@
 ---
 tags: [best-practices, hermes]
 aliases: [Hermes Agent тезисы]
+date: 2025-07-26
+version: 1.0
+source: 2025-07-26_Hermes-agent
 ---
+
+> **Дата:** 2025-07-26
+> **Версия:** 1.0
+> **Источник:** [[2025-07-26_Hermes-agent]] — YouTube, "Hermes agent. Как ставить задачи агенту?"
+> **Библиография:** [[../bibliography|Библиография]]
+
+
 # Hermes agent. Как ставить задачи агенту? — тезисы
 
-**Источник:** YouTube, "Hermes agent. Как ставить задачи агенту?"
-**Ссылка:** https://youtu.be/nBSd9-wxCVQ
-**Стенограмма:** `scripts/build-loop/transcripts/2025-07-26_Hermes-agent.md`
-
----
 
 Практические принципы постановки задач AI-агентам:
 

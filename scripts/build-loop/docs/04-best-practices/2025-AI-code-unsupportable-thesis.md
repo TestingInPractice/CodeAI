@@ -1,14 +1,19 @@
 ---
 tags: [ai-code, best-practices]
 aliases: [AI Code Unsupportable тезисы]
+date: 2025
+version: 1.0
+source: 2025-AI-code-unsupportable
 ---
+
+> **Дата:** 2025
+> **Версия:** 1.0
+> **Источник:** [[2025-AI-code-unsupportable]] — YouTube
+> **Библиография:** [[../bibliography|Библиография]]
+
+
 # Почему ИИ-код становится неподдерживаемым — тезисы
 
-**Источник:** YouTube
-**Ссылка:** https://www.youtube.com/watch?v=MdKFWhYZzcs
-**Стенограмма:** `scripts/build-loop/docs/01-frameworks/2025-AI-code-unsupportable-transcript.md`
-
----
 
 ### Проблема
 

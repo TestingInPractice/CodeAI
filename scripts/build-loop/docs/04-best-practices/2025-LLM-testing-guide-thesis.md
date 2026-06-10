@@ -1,14 +1,19 @@
 ---
 tags: [best-practices, llm-testing]
 aliases: [LLM Testing Guide тезисы]
+date: 2025-06
+version: 1.0
+source: 2025-LLM-testing-guide
 ---
+
+> **Дата:** 2025-06
+> **Версия:** 1.0
+> **Источник:** [[2025-LLM-testing-guide]] — YouTube, гайд для собеседования
+> **Библиография:** [[../bibliography|Библиография]]
+
+
 # Тестирование AI и LLM систем — полный гайд для QA Engineer — тезисы
 
-**Источник:** YouTube, гайд для собеседования
-**Ссылка:** https://www.youtube.com/watch?v=9MWy0M3Wqx8
-**Стенограмма:** `scripts/build-loop/docs/04-best-practices/2025-LLM-testing-guide-transcript.md`
-
----
 
 ### Ключевое отличие: детерминизм vs вероятность
 
@@ -57,6 +62,6 @@ QA Engineer в эпоху AI становится не просто баг-ха�
 
 ---
 
-**↪️ 2025-LLM-testing-guide-transcript:** [[2025-LLM-testing-guide-transcript]]
+**↪️ 2025-LLM-testing-guide:** [[2025-LLM-testing-guide]]
 
 **↪️ Категория:** [[README]]

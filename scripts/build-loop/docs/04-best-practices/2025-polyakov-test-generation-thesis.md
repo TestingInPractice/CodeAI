@@ -1,14 +1,19 @@
 ---
 tags: [test-generation, rag]
 aliases: [Polyakov Test Generation тезисы]
+date: 2025
+version: 1.0
+source: 2025-polyakov-test-generation
 ---
+
+> **Дата:** 2025
+> **Версия:** 1.0
+> **Источник:** [[2025-polyakov-test-generation]] — YouTube, доклад на конференции
+> **Библиография:** [[../bibliography|Библиография]]
+
+
 # Автогенерация тестов в IDE: RAG + LLM — Александр Поляков (Сбер) — тезисы
 
-**Источник:** YouTube, доклад на конференции
-**Ссылка:** https://www.youtube.com/watch?v=YZZ6EcRFVUg
-**Стенограмма:** `scripts/build-loop/docs/01-frameworks/2025-polyakov-test-generation-transcript.md`
-
----
 
 ### Проблема
 

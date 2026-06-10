@@ -63,7 +63,7 @@ link_pair "$DOCS/04-best-practices/2025-07-26_AI-products-systematic-improvement
 link_pair "$DOCS/04-best-practices/2025-07-26_Hermes-agent.md" "2025-07-26_Hermes-agent" \
           "$DOCS/04-best-practices/2025-07-26_Hermes-agent-thesis.md" "2025-07-26_Hermes-agent-thesis"
 
-link_pair "$DOCS/04-best-practices/2025-LLM-testing-guide-transcript.md" "2025-LLM-testing-guide-transcript" \
+link_pair "$DOCS/04-best-practices/2025-LLM-testing-guide.md" "2025-LLM-testing-guide" \
           "$DOCS/04-best-practices/2025-LLM-testing-guide-thesis.md" "2025-LLM-testing-guide-thesis"
 
 link_pair "$DOCS/04-best-practices/2025-vitaly-kharisov-ai-frontend.md" "2025-vitaly-kharisov-ai-frontend" \

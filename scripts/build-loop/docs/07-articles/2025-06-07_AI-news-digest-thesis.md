@@ -1,14 +1,19 @@
 ---
 tags: [ai-news, дайджест]
 aliases: [AI News Digest тезисы]
+date: 2025-06-07
+version: 1.0
+source: 2025-06-07_AI-news-digest
 ---
+
+> **Дата:** 2025-06-07
+> **Версия:** 1.0
+> **Источник:** [[2025-06-07_AI-news-digest]] — YouTube, "Новая СИСТЕМА Кода! Google ПЕРЕНВЕРНУЛ Индустрию! Antigravity 2.0 Сломал ВСЁ!"
+> **Библиография:** [[../bibliography|Библиография]]
+
+
 # AI-новости: Google, Anthropic, OpenAI — дайджест
 
-**Источник:** YouTube, "Новая СИСТЕМА Кода! Google ПЕРЕНВЕРНУЛ Индустрию! Antigravity 2.0 Сломал ВСЁ!"
-**Ссылка:** https://youtu.be/ZXhpIEUpRSo
-**Стенограмма:** `docs/01-frameworks/2025-06-07_AI-news-digest.md`
-
----
 
 ## 1. О чём видео
 

@@ -1,14 +1,19 @@
 ---
 tags: [opencode, agents-md, claude-md]
 aliases: [AGENTS CLAUDE howto тезисы]
+date: 2025-06-07
+version: 1.0
+source: 2025-06-07_AGENTS-CLAUDE-howto
 ---
+
+> **Дата:** 2025-06-07
+> **Версия:** 1.0
+> **Источник:** [[2025-06-07_AGENTS-CLAUDE-howto]] — YouTube, "AGENTS.md и CLAUDE.md: как готовить?"
+> **Библиография:** [[../bibliography|Библиография]]
+
+
 # AGENTS.md и CLAUDE.md: как готовить? — структурированные тезисы
 
-**Источник:** YouTube, "AGENTS.md и CLAUDE.md: как готовить?"
-**Ссылка:** https://youtu.be/HND-LGJRUJ4
-**Стенограмма:** `docs/03-opencode-config/2025-06-07_AGENTS-CLAUDE-howto.md`
-
----
 
 ## 1. О чём видео
 

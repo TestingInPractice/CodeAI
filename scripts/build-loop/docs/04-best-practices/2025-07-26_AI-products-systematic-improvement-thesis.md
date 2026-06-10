@@ -1,14 +1,19 @@
 ---
 tags: [best-practices, eval-driven]
 aliases: [AI Products Systematic Improvement тезисы]
+date: 2025-07-26
+version: 1.0
+source: 2025-07-26_AI-products-systematic-improvement
 ---
+
+> **Дата:** 2025-07-26
+> **Версия:** 1.0
+> **Источник:** [[2025-07-26_AI-products-systematic-improvement]] — YouTube, "Простые подходы к системному улучшению AI-продуктов"
+> **Библиография:** [[../bibliography|Библиография]]
+
+
 # Простые подходы к системному улучшению AI-продуктов — тезисы
 
-**Источник:** YouTube, "Простые подходы к системному улучшению AI-продуктов"
-**Ссылка:** https://youtu.be/BGZDLKPMgEo
-**Стенограмма:** `scripts/build-loop/transcripts/2025-07-26_AI-products-systematic-improvement.md`
-
----
 
 Практические подходы к системному улучшению AI-продуктов:
 

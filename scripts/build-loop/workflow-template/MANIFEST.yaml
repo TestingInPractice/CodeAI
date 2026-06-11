@@ -78,3 +78,6 @@ files:
   skills/integrate-release/SKILL.md:
     purpose: Release integration — merge, changelog, tag, close issues
     editable: true
+  skills/deploy-release/SKILL.md:
+    purpose: Local verification — health check, smoke tests, report
+    editable: true

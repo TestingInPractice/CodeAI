@@ -43,6 +43,10 @@ files:
     purpose: Judge scoring protocol
     editable: true
 
+  templates/specs/requirements.md:
+    purpose: Spec template (ТЗ) — единый формат входного файла
+    editable: true
+    deploy_to: docs/specs/requirements.md
 
   scripts/validate_state.py:
     purpose: State validation (schema + invariants + gates)

@@ -98,8 +98,19 @@ def init_project(project_dir, force=False, update=False):
     checksums = {}
 
     def is_template_file(rel):
-        """Skip states/ templates during raw copy — they become state.json/phases.json"""
-        return rel == "states/initial.json" or rel == "states/phase-template.json"
+        """Skip state/spec templates — they deploy to different paths"""
+        return rel in ("states/initial.json", "states/phase-template.json", "templates/specs/requirements.md")
+
+    def deploy_spec_template(project_dir):
+        spec_dir = os.path.join(project_dir, "docs", "specs")
+        spec_path = os.path.join(spec_dir, "requirements.md")
+        src = os.path.join(TEMPLATE_DIR, "templates", "specs", "requirements.md")
+        if not os.path.exists(spec_path):
+            os.makedirs(spec_dir, exist_ok=True)
+            shutil.copy2(src, spec_path)
+            print(f"  created: docs/specs/requirements.md")
+            return True
+        return False
 
     def deploy_state_files(workflow_dir, checksums):
         src_state = os.path.join(TEMPLATE_DIR, "states", "initial.json")
@@ -170,6 +181,8 @@ def init_project(project_dir, force=False, update=False):
             checksums["config.yaml"] = file_checksum(config_path)
 
         deploy_state_files(workflow_dir, checksums)
+
+    deploy_spec_template(project_dir)
 
     # Write checksums
     checksums_path = os.path.join(workflow_dir, ".checksums.json")

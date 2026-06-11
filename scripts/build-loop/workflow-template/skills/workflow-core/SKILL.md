@@ -49,15 +49,21 @@ uses:
 Если state.json показывает `phase: plan-release, status: pending`:
 
 1. Проверь, что `docs/specs/requirements.md` существует
-2. Если нет — скажи пользователю: "Напиши requirements.md в docs/specs/"
+2. Если нет — скажи пользователю: "Напиши requirements.md в docs/specs/ по шаблону (создан при init)"
 3. Вызови custom tool `transition-phase` с параметрами:
    - action: start
    - phase: plan-release
-4. Запусти subagent analyst (через task) с инструкциями skills/plan-release/SKILL.md:
-   - Прочитай docs/specs/requirements.md
-   - Создай docs/specs/goals.md, architecture.md, contracts/
-   - Декомпозируй ТЗ на задачи
-   - Создай GitHub Issues для каждой задачи
+4. Запусти subagent analyst (через task) с инструкциями:
+   - **Прочитай `docs/specs/requirements.md`**
+   - Формат файла строгий: секции с заголовками `##`, требования с ID `F-XXX`, таблицы, YAML-модели, acceptance criteria с привязкой к F-XXX
+   - **Создай docs/specs/goals.md** — выжимка цели (секция 2) и scope (секция 4)
+   - **Создай docs/specs/architecture.md** — стек, паттерны, компоненты, data flow (секция 3)
+   - **Создай docs/specs/contracts/** — по файлу на API-контракт (секция 7)
+   - **Создай docs/specs/data-model.md** — итоговая схема данных (секция 6)
+   - **Декомпозируй ТЗ на задачи:** каждое F-XXX (секция 5) → 1+ задач. У каждой задачи: title, acceptance criteria, связь с F-XXX
+   - **Создай GitHub Issues** для каждой задачи с тегом `plan-release` и ссылкой на F-XXX
+   - Если в ТЗ есть секция 12 (Open Questions) — обработай их
+   - Если не хватает информации — верни NEEDS_CONTEXT через subagent protocol
 5. После получения результата:
    - Обнови state.json: plan_release.status = completed
    - Запусти judge-analyst (см. references/judge-rubric.md)

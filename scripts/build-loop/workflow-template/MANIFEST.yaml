@@ -75,3 +75,6 @@ files:
   skills/write-tests/SKILL.md:
     purpose: Tester subagent instructions — integration/e2e/regression tests
     editable: true
+  skills/integrate-release/SKILL.md:
+    purpose: Release integration — merge, changelog, tag, close issues
+    editable: true

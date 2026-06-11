@@ -63,8 +63,10 @@ T1 (оркестратор)            T2 (исполнитель + судья)
 5. Жди ответа пользователя
 6. Прочитай `.workflow/subagent-handoff.json`
 7. Если `judge_verdict == "passed"`:
+   - Извлеки `spec_version` и `release_branch` из handoff
+   - Запиши их в `state.json` (через `transition.py` неудобно — можно прямым чтением/записью state, но только version и release_branch)
    - `transition.py --project . --to implement-spec-stage --action transition`
-   - Вернись к шагу 3 для следующей фазы
+   - Вернись к шагу 3 для следующей фазы, передав `spec_version` и `release_branch` в handoff
 8. Если `judge_verdict == "failed"` или `open_questions` есть → объясни пользователю, он открывает T2 снова
 
 ### Основной цикл

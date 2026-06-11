@@ -1,10 +1,10 @@
 ---
 name: implement-spec-stage
 description: >
-  Фаза 2 workflow: реализация одной задачи + судья.
-  git branch → имплементация → unit-тесты → commit + push → issue comment.
+  Фаза 2 workflow: реализация задач в release-ветке + судья.
+  Каждая задача — коммит в release/v{version}.
   Запускается в Терминале 2. Одна задача — один запуск.
-  Triggers: "implement {task_uuid}", "code {task_uuid}"
+  Triggers: "implement {task_uuid}"
 type: workflow
 step: 2
 ---
@@ -13,7 +13,7 @@ step: 2
 
 ## Запуск
 
-Прочитай `.workflow/subagent-handoff.json`. Оттуда `task_uuid`.
+Прочитай `.workflow/subagent-handoff.json`. Оттуда `task_uuid` и `release_branch`.
 
 Читать:
 - `.workflow/tasks/{task_uuid}.md`
@@ -23,11 +23,11 @@ step: 2
 
 ## Алгоритм
 
-### Шаг 1: Git branch
+### Шаг 1: Переключиться на release-ветку
 
 ```bash
 git checkout main && git pull
-git checkout -b feat/{task_uuid}
+git checkout "release/{spec_version}" && git pull
 ```
 
 ### Шаг 2: Прочитать задачу
@@ -56,7 +56,7 @@ npm test 2>&1 || pytest .
 
 ```bash
 git add -A && git commit -m "feat({task_uuid}): {title}"
-git push origin feat/{task_uuid}
+git push origin "release/{spec_version}"
 ```
 
 ### Шаг 7: Issue comment
@@ -84,7 +84,7 @@ python3 scripts/evaluate_judge.py prepare --project . --rubric judge-rubrics/dev
   "judge_verdict": "passed",
   "judge_score": 90,
   "evidence": [
-    "feat/{uuid} (commit abc1234)",
+    "release/v1.0.0 (commit abc1234)",
     "https://github.com/.../issues/N"
   ]
 }

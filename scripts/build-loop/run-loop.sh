@@ -2,13 +2,14 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 --project <path> [--phase <id>] [--print-prompt] [--mark-complete]"
+  echo "Usage: $0 --project <path> [--phase <id>] [--print-prompt] [--mark-complete] [--judge] [--summary <file>]"
   exit 1
 }
 
 PROJECT=""
 PHASE_ID=""
 MODE="status"
+SUMMARY_FILE=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -16,6 +17,8 @@ while [[ $# -gt 0 ]]; do
     --phase)           PHASE_ID="$2"; shift 2 ;;
     --print-prompt)    MODE="prompt"; shift ;;
     --mark-complete)   MODE="complete"; PHASE_ID="${2:-}"; shift 2; if [ -z "$PHASE_ID" ]; then echo "Error: --mark-complete requires phase id"; usage; fi ;;
+    --judge)           MODE="judge"; shift ;;
+    --summary)         SUMMARY_FILE="$2"; shift 2 ;;
     *) usage ;;
   esac
 done
@@ -28,6 +31,7 @@ fi
 SPECS_DIR="$PROJECT/docs/specs"
 STATE_DIR="$PROJECT/.build-loop"
 PHASES_FILE="$STATE_DIR/phases.json"
+JUDGE_SCRIPT="$PROJECT/scripts/judge/llm-judge.py"
 
 if [ ! -f "$PHASES_FILE" ]; then
   echo "Error: $PHASES_FILE not found. Run decompose.sh first."
@@ -52,7 +56,7 @@ import json, sys
 with open('$PHASES_FILE') as f:
     data = json.load(f)
 for p in data.get('phases', []):
-    if str(p.get('id')) == '$id' or str(p.get('id')) == '$id':
+    if str(p.get('id')) == '$id':
         print(json.dumps(p))
         sys.exit(0)
 print('NOT_FOUND')
@@ -82,9 +86,10 @@ $spec_content
 3. Implement everything required for this phase.
 4. Verify against the acceptance criteria in the spec.
 
-When done, run:
-  bash scripts/build-loop/run-loop.sh --project "$PROJECT" --mark-complete <phase-id>
-to mark this phase as completed and proceed to the next phase.
+When done:
+1. Save a summary of what was done to a file (e.g. /tmp/phase-summary.txt)
+2. Run the judge: bash $(cd "$(dirname "$0")" && pwd)/run-loop.sh --project "$PROJECT" --judge --phase <phase-id> --summary /tmp/phase-summary.txt
+3. If judge PASSES: bash $(cd "$(dirname "$0")" && pwd)/run-loop.sh --project "$PROJECT" --mark-complete <phase-id>
 PROMPT
 }
 
@@ -116,6 +121,46 @@ for k,v in d.items():
     echo ""
     echo "--- Phase Prompt ---"
     generate_prompt "$phase_name"
+    ;;
+
+  judge)
+    if [ -z "$PHASE_ID" ]; then
+      echo "Error: --judge requires --phase <id>"
+      exit 1
+    fi
+    if [ -z "$SUMMARY_FILE" ] || [ ! -f "$SUMMARY_FILE" ]; then
+      echo "Error: --judge requires --summary <file> (path to sub-agent summary)"
+      exit 1
+    fi
+    if [ ! -f "$JUDGE_SCRIPT" ]; then
+      echo "Error: judge script not found at $JUDGE_SCRIPT"
+      echo "Install: copy from CodeAI repo or create scripts/judge/llm-judge.py"
+      exit 1
+    fi
+
+    phase_data=$(read_phase "$PHASE_ID")
+    phase_name=$(echo "$phase_data" | python3 -c "import json,sys; print(json.load(sys.stdin).get('name','Unknown'))")
+    spec_file=$(find_spec_file "$SPECS_DIR")
+
+    echo "╔═══════════════════════════════════════════════╗"
+    echo "║  Judge: Phase $PHASE_ID — $phase_name"
+    echo "╚═══════════════════════════════════════════════╝"
+    echo ""
+
+    if python3 "$JUDGE_SCRIPT" \
+      --question "Phase $PHASE_ID: $phase_name" \
+      --response "$(cat "$SUMMARY_FILE")" \
+      --context "$(cat "$spec_file")" \
+      --phase-id "$PHASE_ID" \
+      --phases-path "$PHASES_FILE"; then
+      echo ""
+      echo "✅ Judge PASSED — phase $PHASE_ID ready for commit"
+    else
+      echo ""
+      echo "❌ Judge FAILED — phase $PHASE_ID needs rework"
+      echo "   Fix issues and re-run:"
+      echo "   bash $0 --project \"$PROJECT\" --judge --phase $PHASE_ID --summary $SUMMARY_FILE"
+    fi
     ;;
 
   complete)
@@ -158,6 +203,9 @@ else:
         status = p.get('status', 'pending')
         icon = '✅' if status == 'completed' else '⏳' if status == 'in_progress' else '⬜'
         print(f'  {icon} Phase {p[\"id\"]}: {p.get(\"name\", \"?\")} [{status}]{dep_str}')
+    print()
+    print('Next step:')
+    print('  bash scripts/build-loop/next-phase.sh --project \"$PROJECT\"')
 "
     ;;
 esac

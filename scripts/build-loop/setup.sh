@@ -43,4 +43,26 @@ else
 fi
 
 echo ""
+echo "--- Verifying Mode C tools ---"
+GSTACK_OK=false
+GSD_OK=false
+command -v gstack &>/dev/null && GSTACK_OK=true && echo "  GStack: OK"
+command -v gstack &>/dev/null || echo "  GStack: not found (install manually or re-run setup)"
+command -v gsd &>/dev/null && GSD_OK=true && echo "  GSD: OK"
+command -v gsd &>/dev/null || echo "  GSD: not found (npx @opengsd/get-shit-done-redux)"
+if [ -f "$HOME/.config/opencode/opencode.json" ]; then
+  echo "  opencode config: found"
+else
+  echo "  opencode config: not found"
+fi
+# Verify transition.py exists
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+if [ -f "$SCRIPT_DIR/transition.py" ]; then
+  echo "  transition.py: OK"
+fi
+if [ -f "$SCRIPT_DIR/workflow/run-task.sh" ]; then
+  echo "  run-task.sh: OK"
+fi
+
+echo ""
 echo "=== Setup complete ==="

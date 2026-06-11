@@ -145,6 +145,96 @@ my-project/
 5. Записать результат в handoff
 6. Закрыть терминал
 
+### Режим C: Full Pipeline (spec → human gate → per-task analyst→dev→tester)
+
+**Для:** production-проектов, где нужен полный цикл: spec → ревью человека → аналитик → судья → разработчик → судья → тестировщик → судья.
+
+Старт: пользователь говорит "сделай проект X, используй наш workflow https://github.com/TestingInPractice/CodeAI"
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│ РЕЖИМ C: FULL AUTO PIPELINE                                      │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│ [Человек] создаёт репо, открывает opencode, пишет промт          │
+│     ↓                                                            │
+│ 0. SETUP                                                         │
+│    start-project.sh: clone CodeAI → setup.sh → init.sh           │
+│    → .workflow/state.json                                        │
+│     ↓                                                            │
+│ 1. SPEC                                                          │
+│    AI (или GStack /spec) → docs/specs/goals.md                   │
+│    по шаблону requirements.md (F-XXX, AC, архитектура, контракты) │
+│     ↓                                                            │
+│    [СУДЬЯ] evaluate_judge.py — structural + IEEE 29148           │
+│    PASS → human_gate                                             │
+│     ↓                                                            │
+│ 2. HUMAN GATE                                                    │
+│    status: waiting_human → человек читает spec                   │
+│    правит, утверждает → transition                               │
+│     ↓                                                            │
+│ 3. DECOMPOSE                                                     │
+│    decompose.sh → phases.json                                    │
+│    [СУДЬЯ] evaluate_judge.py — coverage                          │
+│     ↓ PASS                                                       │
+│ 4. PER-TASK CYCLE (для p1..pN)                                   │
+│    ┌─────────────────────────────────────────────────────┐       │
+│    │ task() АНАЛИТИК → ADR, data models, contracts       │       │
+│    │ [СУДЬЯ] llm-judge.py                                │       │
+│    │ FAIL → re-delegate аналитик                         │       │
+│    │ ↓ PASS                                               │       │
+│    │ task() РАЗРАБОТЧИК → код фазы                       │       │
+│    │ [СУДЬЯ] llm-judge.py                                │       │
+│    │ FAIL → re-delegate разработчик                      │       │
+│    │ ↓ PASS                                               │       │
+│    │ task() ТЕСТИРОВЩИК → unit/integration тесты          │       │
+│    │ [СУДЬЯ] llm-judge.py                                │       │
+│    │ FAIL → re-delegate тестировщик                      │       │
+│    │ ↓ PASS                                               │       │
+│    │ git commit + mark-complete → next task              │       │
+│    └─────────────────────────────────────────────────────┘       │
+│     ↓                                                            │
+│ 5. COMPLETE → отчёт                                             │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+**Ключевые отличия от A и B:**
+
+| Аспект | Режим C |
+|--------|---------|
+| Фаз | 6 фаз верхнего уровня (setup→spec→human→decompose→task_cycle→complete) |
+| Per-task | analyst → **judge** → developer → **judge** → tester → **judge** |
+| Human gate | waiting_human после spec, до decompose |
+| Состояние | `.workflow/state.json` (transition.py) |
+| Spec | Полный шаблон requirements.md (F-XXX, AC, архитектура, контракты, UI, non-functional) |
+| Судья | Один `llm-judge.py` для всех ролей (4 pillars: AC → Relevance → Faithfulness → Context Precision) |
+
+**Команды:**
+
+```bash
+# Старт проекта
+bash scripts/start-project.sh \
+  --project . \
+  --prompt "Сделай todo-приложение" \
+  --workflow-repo "https://github.com/TestingInPractice/CodeAI"
+
+# Управление состоянием
+python3 scripts/transition.py --project . status
+python3 scripts/transition.py --project . start --phase spec
+python3 scripts/transition.py --project . human-gate --questions '["Вопрос?"]'
+python3 scripts/transition.py --project . approve
+python3 scripts/transition.py --project . transition
+
+# Per-task шаги
+bash scripts/workflow/run-task.sh --project . --phase p1 --step analyst --print-prompt
+bash scripts/workflow/run-task.sh --project . --phase p1 --step analyst --judge --summary /tmp/p1-analyst.txt
+bash scripts/workflow/run-task.sh --project . --phase p1 --step dev --print-prompt
+bash scripts/workflow/run-task.sh --project . --phase p1 --step dev --judge --summary /tmp/p1-dev.txt
+bash scripts/workflow/run-task.sh --project . --phase p1 --step tester --print-prompt
+bash scripts/workflow/run-task.sh --project . --phase p1 --step tester --judge --summary /tmp/p1-tester.txt
+bash scripts/workflow/run-task.sh --project . --phase p1 --complete
+```
+
 ---
 
 ## 4. Судья (Judge)
@@ -162,14 +252,14 @@ python3 scripts/judge/llm-judge.py \
   --phases-path ".build-loop/phases.json"
 ```
 
-**4 pillars:**
+**4 pillars (в порядке важности):**
 
 | Pillar | Что проверяет | Вес |
 |--------|--------------|-----|
+| AC Check | Acceptance criteria покрыты? ключевые термины из AC в ответе | 25% |
 | Relevance | Ответ отвечает на вопрос? overlap слов ≥20% | 25% |
 | Faithfulness | Ответ основан на контексте? hallucination ratio ≤50% | 25% |
 | Context Precision | Контекст качественный? структура, длина 10-2000 слов | 25% |
-| AC Check | Acceptance criteria покрыты? ключевые термины из AC в ответе | 25% |
 
 **Score:** среднее арифметическое 4 pillars. PASS ≥ 0.5.
 
@@ -202,8 +292,8 @@ python3 scripts/evaluate_judge.py prepare \
 
 | Режим | Судья | Почему |
 |-------|-------|--------|
-| Ralph Loop | `llm-judge.py` | Не требует rubrics, работает по summary, 4 pillars |
-| 2-Terminal | `evaluate_judge.py` | Structural check по файлам, AI prompt с IEEE 29148 |
+| A (Ralph) / C (Full) | `llm-judge.py` | 4 pillars: AC → Relevance → Faithfulness → Context Precision |
+| B (2-Terminal) | `evaluate_judge.py` | Structural + AI prompt с IEEE 29148; для режима где T2 сам проверяет файлы |
 
 ---
 
@@ -315,12 +405,13 @@ bash scripts/build-loop/run-loop.sh --project . --mark-complete p1
 
 ## 8. Выбор режима
 
-| Фактор | Ralph Loop | 2-Terminal |
-|--------|-----------|------------|
-| Терминалов | 1 | 2 |
-| Человеческий контроль | минимальный | на каждом шаге |
-| Сложность проекта | низкая-средняя | средняя-высокая |
-| Судья | llm-judge.py (4 pillars) | evaluate_judge.py (structural + AI) |
-| Состояние | phases.json | state.json + handoff.json |
-| Sub-agent запуск | task() без task_id | ручное открытие T2 |
-| Когда выбрать | быстрая разработка, solo | командная работа, milestones |
+| Фактор | A: Ralph Loop | B: 2-Terminal | C: Full Pipeline |
+|--------|--------------|---------------|------------------|
+| Терминалов | 1 | 2 | 1 |
+| Человеческий контроль | минимальный | на каждом шаге | human gate на spec |
+| Сложность проекта | низкая-средняя | средняя-высокая | любая |
+| Судья | llm-judge.py | evaluate_judge.py | llm-judge.py (на всех этапах) |
+| Per-task шаги | dev только | всё в T2 | analyst → dev → tester |
+| Состояние | phases.json | state.json + handoff.json | .workflow/state.json |
+| Sub-agent запуск | task() без task_id | ручное открытие T2 | task() без task_id |
+| Когда выбрать | быстрый прототип | milestones, команда | production, полный цикл |

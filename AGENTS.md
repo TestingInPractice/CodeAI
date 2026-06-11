@@ -73,28 +73,154 @@ Use this as a knowledge source when working on external projects.
 
 ---
 
-## Build Loop — запуск пет-проекта
+# Mode C — Full Pipeline (для новых проектов)
+
+Когда пользователь говорит "сделай проект X" и даёт ссылку на этот репозиторий — следуй этому workflow.
+
+## Фаза 0: Setup
+```
+bash scripts/start-project.sh \
+  --project . \
+  --prompt "описание проекта от пользователя" \
+  --workflow-repo "https://github.com/TestingInPractice/CodeAI"
+```
+Что делает:
+- Клонирует CodeAI в `/tmp/codeai-workflow`
+- Запускает setup.sh (GStack, GSD, Superpowers)
+- Запускает init.sh (docs/specs/, judge, AGENTS.md)
+- Создаёт `.workflow/state.json`
+
+## Фаза 1: Spec
+Прочитай промт пользователя из `.workflow/state.json` (поле `prompt`).
+
+Заполни `docs/specs/goals.md` по шаблону:
+- Мета (версия, приоритет, статус)
+- Цель (что делаем, зачем, для кого)
+- Архитектура (стек, паттерны, компоненты, data flow)
+- Scope / Out of Scope
+- Функциональные требования (F-001, F-002, ...)
+- Data Models
+- API Contracts
+- UI / UX
+- Acceptance Criteria (AC-001 привязанные к F-XXX)
+- Non-functional Requirements
+- Dependencies
+- Open Questions
+
+Если GStack установлен:
+```
+gstack /spec
+```
+Иначе — заполни вручную на основе анализа промта.
+
+После заполнения:
+```
+python3 scripts/evaluate_judge.py prepare \
+  --rubric scripts/build-loop/workflow-template/judge-rubrics/analyst.json \
+  --spec docs/specs/goals.md \
+  --tasks-dir "" \
+  --state ""
+```
+Если FAIL → доработай spec.
+Если PASS:
+```
+python3 scripts/transition.py --project . human-gate \
+  --questions '["Все ли требования учтены?", "Стек технологий верный?"]'
+```
+Скажи пользователю: "Spec готов. Посмотри docs/specs/goals.md, задай вопросы или скажи 'утверждаю'".
+
+Жди ответа. Когда пользователь скажет "утверждаю" или "ок":
+```
+python3 scripts/transition.py --project . approve
+python3 scripts/transition.py --project . transition
+```
+
+## Фаза 2: Decompose
+```
+bash scripts/build-loop/decompose.sh --project .
+```
+
+Запусти судью над декомпозицией:
+```
+python3 scripts/evaluate_judge.py prepare \
+  --rubric scripts/build-loop/workflow-template/judge-rubrics/analyst.json \
+  --spec docs/specs/goals.md
+```
+Если FAIL → передекомпозируй.
+Если PASS:
+```
+python3 scripts/transition.py --project . transition
+```
+
+## Фаза 3: Task Cycle (для каждой задачи p1..pN)
+
+Для каждой pending фазы из `.build-loop/phases.json`:
+
+### Шаг A. Аналитик
+```
+bash scripts/workflow/run-task.sh --project . --phase <id> --step analyst --print-prompt
+```
+Скопируй вывод. **Вызови `task()`** с этим промптом — свежий sub-agent.
+
+Sub-agent пишет `/tmp/p<id>-analyst-summary.txt` и возвращает управление.
+
+Запусти судью:
+```
+bash scripts/workflow/run-task.sh --project . --phase <id> --step analyst --judge --summary /tmp/p<id>-analyst-summary.txt
+```
+FAIL → `task()` снова с фидбеком.
+PASS → переход к разработчику.
+
+### Шаг B. Разработчик
+```
+bash scripts/workflow/run-task.sh --project . --phase <id> --step dev --print-prompt
+```
+`task()` → свежий sub-agent → пишет код + `/tmp/p<id>-dev-summary.txt`.
+
+Судья:
+```
+bash scripts/workflow/run-task.sh --project . --phase <id> --step dev --judge --summary /tmp/p<id>-dev-summary.txt
+```
+FAIL → `task()` снова.
+PASS → переход к тестировщику.
+
+### Шаг C. Тестировщик
+```
+bash scripts/workflow/run-task.sh --project . --phase <id> --step tester --print-prompt
+```
+`task()` → свежий sub-agent → пишет тесты + `/tmp/p<id>-tester-summary.txt`.
+
+Судья:
+```
+bash scripts/workflow/run-task.sh --project . --phase <id> --step tester --judge --summary /tmp/p<id>-tester-summary.txt
+```
+FAIL → `task()` снова.
+PASS → коммит.
+
+### Финал задачи
+```
+git add -A && git commit -m "p<id>: <phase name>"
+git push
+bash scripts/build-loop/run-loop.sh --project . --mark-complete <id>
+bash scripts/build-loop/next-phase.sh --project .
+```
+Переход к следующей задаче.
+
+## Фаза 4: Complete
+Когда все фазы завершены — покажи итоговый отчёт.
+
+---
+
+## Build Loop — запуск пет-проекта (режимы A и B)
 
 Скрипты в `scripts/build-loop/` — для запуска на **внешнем проекте**. Не запускать в этом репозитории.
 
+### Режим A: Ralph Loop (1 терминал, task() sub-agents)
 ```bash
-# 1. Установить инструменты и инициализировать проект
 bash scripts/build-loop/build-loop.sh --project /path/to/your-project
-
-# 2. Заполнить docs/specs/ в своём проекте (1 файл или структуру)
-
-# 3. Декомпозировать spec на фазы
 bash scripts/build-loop/build-loop.sh --project /path/to/your-project --decompose-only
-
-# 4a. Ralph Loop (Claude Code — автоматически)
 bash scripts/build-loop/build-loop.sh --project /path/to/your-project --run-only
-
-# 4b. Ralph Loop (OpenCode — фаза за фазой в диалоге)
-bash scripts/build-loop/decompose.sh --project /path/to/your-project
-# AI читает spec, имплементирует фазу, помечает "completed" в phases.json,
-# повторяет для следующей фазы.
-# Команды для AI:
-#   bash scripts/build-loop/next-phase.sh --project .      — узнать следующую фазу
-#   bash scripts/build-loop/run-loop.sh --project . --phase <id> --print-prompt  — получить промпт фазы
-# Никакого Claude CLI не нужно.
 ```
+
+### Режим B: 2-Terminal (T1+T2, state.json handoff)
+См. `scripts/build-loop/workflow-template/AGENTS.md`

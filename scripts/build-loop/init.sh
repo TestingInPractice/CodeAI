@@ -2,15 +2,18 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 --project <path>"
+  echo "Usage: $0 --project <path> [--full]"
+  echo "  --full: run setup.sh first, then init"
   exit 1
 }
 
 PROJECT=""
+FULL=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --project|-p) PROJECT="$2"; shift 2 ;;
+    --full)       FULL=true; shift ;;
     *) usage ;;
   esac
 done
@@ -18,6 +21,12 @@ done
 if [ -z "$PROJECT" ]; then
   echo "Error: --project is required"
   usage
+fi
+
+# If --full: run setup first
+if [ "$FULL" = true ]; then
+  INIT_DIR="$(cd "$(dirname "$0")" && pwd)"
+  bash "$INIT_DIR/setup.sh"
 fi
 
 if [ ! -d "$PROJECT" ]; then

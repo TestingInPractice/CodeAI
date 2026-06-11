@@ -148,18 +148,18 @@ def score_ac(response, phase_id="", phases_path=""):
 
 
 def evaluate(question, response, context="", phase_id="", phases_path=""):
+    ac = score_ac(response, phase_id, phases_path)
     r = score_relevance(question, response)
     f = score_faithfulness(response, context)
     cp = score_context_precision(context)
-    ac = score_ac(response, phase_id, phases_path)
 
-    overall = (r[0] + f[0] + cp[0] + ac[0]) / 4
+    overall = (ac[0] + r[0] + f[0] + cp[0]) / 4
 
     return {
+        "ac_check": {"score": ac[0], "issues": ac[1]},
         "relevance": {"score": r[0], "issues": r[1]},
         "faithfulness": {"score": f[0], "issues": f[1]},
         "context_precision": {"score": cp[0], "issues": cp[1]},
-        "ac_check": {"score": ac[0], "issues": ac[1]},
         "overall": round(overall, 3),
         "passed": overall >= 0.5,
     }
@@ -169,11 +169,11 @@ def print_result(result, verbose=True):
     print(json.dumps(result, indent=2, ensure_ascii=False))
     if verbose:
         print(f"\n  Overall:           {result['overall']:.2f} {'PASS' if result['passed'] else 'FAIL'}")
+        print(f"  AC Check:          {result['ac_check']['score']:.2f} {'!'*len(result['ac_check']['issues'])}")
         print(f"  Relevance:         {result['relevance']['score']:.2f} {'!'*len(result['relevance']['issues'])}")
         print(f"  Faithfulness:      {result['faithfulness']['score']:.2f} {'!'*len(result['faithfulness']['issues'])}")
         print(f"  Context Precision: {result['context_precision']['score']:.2f} {'!'*len(result['context_precision']['issues'])}")
-        print(f"  AC Check:          {result['ac_check']['score']:.2f} {'!'*len(result['ac_check']['issues'])}")
-        all_issues = result['relevance']['issues'] + result['faithfulness']['issues'] + result['context_precision']['issues'] + result['ac_check']['issues']
+        all_issues = result['ac_check']['issues'] + result['relevance']['issues'] + result['faithfulness']['issues'] + result['context_precision']['issues']
         if all_issues:
             print(f"  Issues: {', '.join(all_issues)}")
 

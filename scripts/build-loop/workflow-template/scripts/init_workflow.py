@@ -98,8 +98,9 @@ def init_project(project_dir, force=False, update=False):
     checksums = {}
 
     def is_template_file(rel):
-        """Skip state/spec templates — they deploy to different paths"""
-        return rel in ("states/initial.json", "states/phase-template.json", "templates/specs/requirements.md")
+        """Skip state/spec/task templates — they deploy to different paths"""
+        return rel in ("states/initial.json", "states/phase-template.json",
+                       "templates/specs/requirements.md", "templates/tasks/task.md")
 
     def deploy_spec_template(project_dir):
         spec_dir = os.path.join(project_dir, "docs", "specs")
@@ -109,6 +110,17 @@ def init_project(project_dir, force=False, update=False):
             os.makedirs(spec_dir, exist_ok=True)
             shutil.copy2(src, spec_path)
             print(f"  created: docs/specs/requirements.md")
+            return True
+        return False
+
+    def deploy_task_template(project_dir):
+        tasks_dir = os.path.join(project_dir, ".workflow", "templates")
+        task_path = os.path.join(tasks_dir, "task.md")
+        src = os.path.join(TEMPLATE_DIR, "templates", "tasks", "task.md")
+        if not os.path.exists(task_path):
+            os.makedirs(tasks_dir, exist_ok=True)
+            shutil.copy2(src, task_path)
+            print(f"  created: .workflow/templates/task.md")
             return True
         return False
 
@@ -183,6 +195,7 @@ def init_project(project_dir, force=False, update=False):
         deploy_state_files(workflow_dir, checksums)
 
     deploy_spec_template(project_dir)
+    deploy_task_template(project_dir)
 
     # Write checksums
     checksums_path = os.path.join(workflow_dir, ".checksums.json")

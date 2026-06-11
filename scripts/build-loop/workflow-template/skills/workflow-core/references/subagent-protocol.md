@@ -22,21 +22,45 @@ EVIDENCE: <до 3 ссылок на файлы/тесты/логи>
 
 ## Open questions protocol
 
-Когда subagent возвращает NEEDS_CONTEXT:
+Когда subagent возвращает NEEDS_CONTEXT или judge FAIL с open questions:
 
 1. Оркестратор создаёт запись в `state.{section}.open_questions[]`:
    ```json
    {
      "id": "oq-{uuid}",
-     "question": "текст вопроса от subagent",
+     "question": "текст вопроса от subagent/judge",
      "answer": null,
      "resolved": false
    }
    ```
 2. Оркестратор создаёт GitHub Issue с тегом `question`
-3. Ставит `state.status = "waiting_human"`
-4. Пользователь отвечает → answer заполняется → resolved = true
-5. Оркестратор перезапускает subagent с обновлённым контекстом
+3. Ставит `state.status = "waiting_human"` (через `transition.py --action wait`)
+4. Пользователь отвечает в терминале → `transition.py --action resume`
+5. UPDATE `docs/specs/requirements.md` — секция 12 (Open Questions)
+6. ANSWER пишется в `state.{section}.open_questions[i].answer` + `resolved: true`
+7. Оркестратор перезапускает subagent с обновлённым контекстом
+8. После ответа subagent → judge заново
+
+### CLI: ответ пользователя
+
+```bash
+# Оркестратор ждёт:
+echo "OQ-{uuid}: {question}"
+read USER_ANSWER
+
+# Записать ответ в state
+python3 -c "
+import json
+s = json.load(open('.workflow/state.json'))
+oq = [q for q in s['plan_release']['open_questions'] if q['id'] == 'oq-{uuid}'][0]
+oq['answer'] = '$USER_ANSWER'
+oq['resolved'] = True
+json.dump(s, open('.workflow/state.json', 'w'))
+"
+
+# resume
+python3 scripts/transition.py --project . --action resume
+```
 
 ## Size limits
 

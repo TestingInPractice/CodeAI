@@ -65,6 +65,49 @@ score = sum(weight_i * score_i) / sum(weight_i) / 5
 }
 ```
 
+## Hybrid judge procedure
+
+Судья работает в 2 шага:
+
+### Шаг 1: Structural check (скрипт)
+
+```bash
+python3 scripts/evaluate_judge.py prepare \
+  --rubric judge-rubrics/{role}.json \
+  --spec docs/specs/requirements.md \
+  --tasks-dir .workflow/tasks/ \
+  --state .workflow/state.json
+```
+
+Проверяет:
+- F-XXX coverage: каждое F-XXX → хотя бы 1 задача
+- AC completeness: у каждой задачи есть AC
+- Open questions resolved: все вопросы закрыты
+- Task completeness: все задачи выполнены (developer)
+
+Если structural errors > 0 → FAIL до AI судьи.
+
+### Шаг 2: AI judge (subagent)
+
+Если structural check PASSED → запустить subagent-судью с AI prompt.
+
+AI prompt включает:
+- Rubric критерии (из JSON)
+- IEEE 29148 критерии для каждого F-XXX:
+  - **Necessary**: необходимо? убрать — потеря ценности?
+  - **Implementation-free**: не предписывает способ реализации (Что, а не Как)?
+  - **Unambiguous**: однозначно?
+  - **Complete**: детальность достаточна?
+  - **Atomic**: можно проверить отдельно?
+  - **Verifiable**: есть AC?
+  - **Traceable**: есть ID + traceability?
+
+Open questions loop:
+1. AI judge вернул FAIL по ambiguous/incomplete
+2. → оркестратор создаёт open_questions[] в state
+3. → waiting_human → ответ пользователя
+4. → subagent restart → judge re-run
+
 ## Phase-specific judges
 
 | Phase | Judge rubric | What it checks |

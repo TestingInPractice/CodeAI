@@ -194,6 +194,16 @@ def do_transition(project_dir, target_phase, action="transition"):
         elif action == "fail":
             state["status"] = "failed"
 
+        elif action == "wait":
+            state["status"] = "waiting_human"
+            state["subphase"] = "awaiting_answer"
+
+        elif action == "resume":
+            if state["status"] != "waiting_human":
+                return {"status": "error", "error": "not in waiting_human state"}
+            state["status"] = "in_progress"
+            state["subphase"] = None
+
         elif action == "override":
             state["phase"] = target_phase or state["phase"]
             state["status"] = "in_progress"
@@ -209,7 +219,7 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument("--project", required=True)
     p.add_argument("--to", default=None)
-    p.add_argument("--action", default="transition", choices=["transition", "complete", "fail", "override"])
+    p.add_argument("--action", default="transition", choices=["transition", "complete", "fail", "override", "wait", "resume"])
     a = p.parse_args()
     r = do_transition(a.project, a.to, a.action)
     print(json.dumps(r, indent=2))

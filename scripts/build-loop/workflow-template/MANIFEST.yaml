@@ -57,3 +57,21 @@ files:
   scripts/init_workflow.py:
     purpose: Template deployment tool
     editable: false
+  scripts/evaluate_judge.py:
+    purpose: Hybrid structural + AI judge with IEEE 29148
+    editable: false
+
+  templates/tasks/task.md:
+    purpose: Task document template (UUID, AC, spec_ref)
+    editable: true
+    deploy_to: .workflow/templates/task.md
+
+  skills/plan-release/SKILL.md:
+    purpose: Analyst subagent instructions for spec → tasks → issues
+    editable: true
+  skills/implement-spec-stage/SKILL.md:
+    purpose: Developer subagent instructions — implementation + unit tests
+    editable: true
+  skills/write-tests/SKILL.md:
+    purpose: Tester subagent instructions — integration/e2e/regression tests
+    editable: true

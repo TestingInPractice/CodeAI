@@ -1,16 +1,27 @@
 {
   "name": "tester",
   "label": "Судья-тестировщик",
-  "description": "Оценка качества тестового покрытия",
+  "description": "Оценка качества тестового покрытия (фаза write-tests). Критерии основаны на IEEE 29148:2018.",
   "rubric": [
     {
       "id": "ac_coverage",
-      "label": "Все acceptance criteria покрыты тестами",
+      "label": "Все acceptance criteria (F-XXX) покрыты тест-кейсами (Traceable)",
       "weight": 5,
       "scale": 5,
       "pass": 4,
       "critical": true,
-      "evidence_required": true
+      "evidence_required": true,
+      "ieee_29148": "Traceable"
+    },
+    {
+      "id": "verifiable_tests",
+      "label": "Каждый тест-кейс проверяем (Verifiable)",
+      "weight": 4,
+      "scale": 5,
+      "pass": 4,
+      "critical": true,
+      "evidence_required": true,
+      "ieee_29148": "Verifiable"
     },
     {
       "id": "negative_scenarios",
@@ -29,6 +40,16 @@
       "pass": 3,
       "critical": false,
       "evidence_required": true
+    },
+    {
+      "id": "complete_coverage",
+      "label": "Покрытие тестами полное для текущего этапа (Complete)",
+      "weight": 4,
+      "scale": 5,
+      "pass": 4,
+      "critical": true,
+      "evidence_required": true,
+      "ieee_29148": "Complete"
     },
     {
       "id": "integration_tests",

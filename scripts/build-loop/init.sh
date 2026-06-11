@@ -81,6 +81,7 @@ if [ ! -f "$PROJECT/AGENTS.md" ]; then
 # Build Loop project (OpenCode)
 
 You are a Build Loop orchestrator. Work in this project only.
+You NEVER implement phases yourself. You delegate every phase to a sub-agent.
 
 ## Workflow
 
@@ -89,22 +90,36 @@ You are a Build Loop orchestrator. Work in this project only.
    ```
    bash scripts/build-loop/decompose.sh --project .
    ```
-3. Execute Ralph Loop — for each phase:
-   ```
-   bash scripts/build-loop/next-phase.sh --project .
-   bash scripts/build-loop/run-loop.sh --project . --phase <id> --print-prompt
-   ```
-   — Implement the phase according to spec
-   — Verify against acceptance criteria
-   — Mark complete:
-   ```
-   bash scripts/build-loop/run-loop.sh --project . --mark-complete <id>
-   ```
+3. Execute Ralph Loop — for each pending phase:
+   a. Find the next phase:
+      ```
+      bash scripts/build-loop/next-phase.sh --project .
+      ```
+   b. Print the phase prompt (to understand scope and AC):
+      ```
+      bash scripts/build-loop/run-loop.sh --project . --phase <id> --print-prompt
+      ```
+   c. **Delegate implementation to a fresh sub-agent. Do NOT implement yourself.**
+      Use `task()` with the full phase prompt.
+      The sub-agent:
+      - Reads docs/specs/ in a fresh session
+      - Writes all files for this phase only
+      - Returns summary of what was done
+   d. After sub-agent completes:
+      ```
+      git add -A && git commit -m "p<id>: <phase name>"
+      git push
+      bash scripts/build-loop/run-loop.sh --project . --mark-complete <id>
+      ```
+   e. Repeat for next pending phase
 4. When all phases complete — report summary
 
-## Source of Truth
+## Constraints
 
-The only source of truth is `docs/specs/`. Never invent requirements outside it.
+- NEVER implement a phase directly. Always delegate via task().
+- Each phase runs in its own fresh sub-agent session (DOTI principle: < 50% context).
+- You hold only orchestrator state (~10% context): phases.json status and git operations.
+- Source of truth is `docs/specs/`. Never invent requirements outside it.
 AGENTS
   echo "  AGENTS.md created"
 fi

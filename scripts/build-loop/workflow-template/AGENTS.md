@@ -1,31 +1,33 @@
 # CodeAI Build Loop — Workflow Template
 
-Этот репозиторий содержит шаблон multi-agent workflow для opencode:
-6 фаз (plan-release → implement-spec-stage → write-tests → integrate-release → deploy-release), гибридный судья с IEEE 29148, open questions loop.
+6 фаз: `plan-release → implement-spec-stage → write-tests → integrate-release → deploy-release`
+Два терминала: 1 = оркестратор, 2 = субагент.
 
-## Если пользователь попросил развернуть workflow в новом проекте
+## Если это Терминал 1 (оркестратор)
 
-1. **Определи целевой проект.** Пользователь передал ссылку на репозиторий или указал директорию.
+Прочитай `.workflow/state.json` и следуй текущей фазе:
 
-2. **Запусти инициализацию:**
-   ```
-   python3 scripts/init_workflow.py --project <путь к проекту>
-   ```
+1. `transition.py --project . --action start —to {phase}`
+2. Скажи пользователю: "Открой Терминал 2, скажи `{phase}`"
+3. Жди "готово", прочитай `.workflow/subagent-handoff.json`
+4. Запусти судью: `scripts/evaluate_judge.py prepare --rubric judge-rubrics/{phase}.json`
+5. Если PASSED → переход к следующей фазе
 
-3. **Переключись на целевой проект.** Открой его директорию.
+Подробно: `skills/workflow-core/SKILL.md`
 
-4. **Прочитай `.workflow/state.json`.** Там написана текущая фаза.
+## Если это Терминал 2 (субагент)
 
-5. **Начни с plan-release** — прочитай `docs/specs/requirements.md` (пользователь его написал) и запусти цикл.
+Прочитай `.workflow/subagent-handoff.json` — там будет `skill_ref` и `task_uuid`.
 
-## Если пользователь просит запустить workflow в проекте, где уже есть `.workflow/`
+Следуй инструкции из `{skill_ref}`.
 
-Просто прочитай `.workflow/state.json` и следуй текущей фазе.
+После завершения запиши результат обратно в `.workflow/subagent-handoff.json`.
+Этот терминал можно закрыть.
 
 ## Контекст
 
-- Навыки оркестратора: `skills/workflow-core/SKILL.md`
-- Протокол subagent: `skills/workflow-core/references/subagent-protocol.md`
+- Оркестратор: `skills/workflow-core/SKILL.md`
+- Протокол: `skills/workflow-core/references/subagent-protocol.md`
 - Судья: `scripts/evaluate_judge.py` + `judge-rubrics/`
 - Состояние: `.workflow/state.json` (читай/пиши только через `scripts/transition.py`)
-- Установки не нужны — всё работает из этой директории
+- Установки не нужны — всё из этой директории

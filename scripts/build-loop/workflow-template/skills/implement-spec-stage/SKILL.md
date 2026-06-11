@@ -1,157 +1,135 @@
 ---
 name: implement-spec-stage
 description: >
-  Фаза 2 workflow: реализация задач из plan-release.
-  Для каждой задачи: git branch → имплементация → unit-тесты →
-  commit + push → issue comment. После всех задач — judge developer.
-  Triggers: "implement tasks", "develop features", "code the spec",
-  "start implementation".
+  Фаза 2 workflow: реализация одной задачи.
+  Для задачи: git branch → имплементация → unit-тесты →
+  commit + push → issue comment.
+  Запускается в Терминале 2. Одна задача — один запуск.
+  Triggers: "implement {task_uuid}", "code {task_uuid}"
 type: workflow
 step: 2
 ---
 
-# Implement Spec Stage — Разработка
+# Implement Spec Stage — Разработка (терминал 2)
+
+## Запуск
+
+Запускается в Терминале 2 по инструкции оркестратора.
+Входная точка: прочитай `.workflow/subagent-handoff.json`.
+
+Оттуда узнаёшь:
+- `task_uuid` — какую задачу делать
+- `phase` — должна быть `implement-spec-stage`
+- `skill_ref` — путь к этому SKILL.md
 
 ## Workflow Contract
 
 entry:
-  artifacts:
-    - .workflow/state.json
-    - .workflow/tasks/{uuid}.md (от plan-release)
-    - docs/specs/requirements.md
-    - docs/specs/architecture.md
-    - docs/specs/data-model.md
-    - docs/specs/contracts/
-  condition: >
-    state.phase == "implement-spec-stage" AND
-    state.status == "in_progress" AND
-    state.plan_release.judge_verdict == "passed"
+  condition: subagent-handoff.json.task_uuid != null
+  читать:
+    - .workflow/tasks/{task_uuid}.md (задача с AC)
+    - docs/specs/requirements.md (F-XXX из spec_ref)
+    - docs/specs/architecture.md (ADR)
+    - docs/specs/contracts/ (API контракты для F-XXX)
 
 exit:
-  condition: Все задачи выполнены, каждая с judge PASSED
-  artifacts:
-    - реализованный код (в ветках feat/{uuid})
-    - коммиты в GitHub
-
-next_skill: write-tests (если judge PASSED)
-
----
+  создать:
+    - реализованный код (ветка feat/{task_uuid})
+    - коммит
 
 ## Алгоритм
 
-### Шаг 1: Получить список задач
-
-Прочитай `state.implement_spec_stage.tasks[]`.
-
-Каждая задача имеет:
-- `id` — порядковый номер
-- `uuid` — уникальный идентификатор
-- `title` — заголовок
-- `status` — `pending | in_progress | completed | blocked | failed`
-- `spec_ref` — ссылка на F-XXX
-- `issue.url` — GitHub Issue (если создан)
-
-Если `tasks[]` пуст — скопируй `state.plan_release.tasks[]` в `implement_spec_stage.tasks[]`,
-установив каждой `status: pending`. Сообщи оркестратору.
-
-### Шаг 2: Взять следующую pending задачу
-
-Найди первую задачу с `status: pending`.
-
-Установи `state.implement_spec_stage.current_task = task.uuid`.
-Установи `task.status = in_progress`.
-
-### Шаг 3: Git branch
+### Шаг 1: Git branch
 
 ```bash
 git checkout main && git pull
-git checkout -b feat/{task.uuid}
+git checkout -b feat/{task_uuid}
 ```
 
-Установи `task.branch = feat/{task.uuid}`.
+### Шаг 2: Прочитать задачу
 
-### Шаг 4: Реализация
-
-Прочитай файл задачи `.workflow/tasks/{task.uuid}.md`. Определи:
+Прочитай `.workflow/tasks/{task_uuid}.md`:
 - Acceptance Criteria (AC-1, AC-2...)
 - Technical Notes
-- spec_ref → открой соответствующий F-XXX в ТЗ
+- spec_ref → открой соответствующий F-XXX в requirements.md
 
-Прочитай `docs/specs/architecture.md` — убедись, что следуешь ADR.
+Прочитай `docs/specs/architecture.md` — следуй ADR.
 
-Реализуй код, удовлетворяющий всем AC задачи.
+### Шаг 3: Реализация
+
+Реализуй код по AC задачи.
 
 Правила:
 - **Ничего лишнего.** Только то, что в AC задачи
-- Следуй ADR (архитектурные решения из `docs/specs/architecture.md`)
-- Следуй стилю кода проекта (lint + typecheck)
+- Следуй ADR из architecture.md
+- Следуй стилю кода (lint + typecheck)
 - Не меняй файлы вне scope задачи
 
-### Шаг 5: Unit-тесты
+### Шаг 4: Unit-тесты
 
-Напиши unit-тесты для реализованного кода:
+Напиши unit-тесты:
 - Покрытие ≥ 80% для нового кода
-- Тесты на позитивные сценарии (каждый AC)
-- Тесты на негативные сценарии (ошибки, граничные случаи)
-- Тесты проходят: `pytest tests/` или `npm test` (по проекту)
+- Позитивные сценарии (каждый AC)
+- Негативные сценарии (ошибки, граничные случаи)
 
-### Шаг 6: Проверка
+```bash
+pytest tests/unit/ -v
+```
+
+### Шаг 5: Проверка
 
 ```bash
 # Lint
-npm run lint  # или ruff, flake8 и т.д.
+npm run lint 2>&1 || ruff check .
+
 # Typecheck
-npm run typecheck  # или mypy, pyright
+npm run typecheck 2>&1 || mypy .
+
 # Tests
-npm test  # или pytest
+npm test 2>&1 || pytest .
 ```
 
-Если что-то не прошло → исправь.
+Всё должно проходить.
 
-### Шаг 7: Commit + Push
+### Шаг 6: Commit + Push
 
 ```bash
 git add -A
-git commit -m "feat({task.uuid}): {task.title}
+git commit -m "feat({task_uuid}): {title}
 
 AC-1: done
 AC-2: done
 ..."
-git push origin feat/{task.uuid}
+git push origin feat/{task_uuid}
 ```
 
-### Шаг 8: GitHub Issue comment
-
-Напиши комментарий в GitHub Issue задачи со ссылкой на коммит:
+### Шаг 7: GitHub Issue comment
 
 ```bash
-gh issue comment {task.issue.number} \
+gh issue comment {issue_number} \
   --body "Implemented in $(git rev-parse HEAD)"
 ```
 
-Установи `task.issue_comment` = URL комментария.
+### Шаг 8: Если не может выполнить
 
-### Шаг 9: Отметить завершение
+- Внешняя зависимость не готова → `STATUS: BLOCKED`
+- Не хватает информации → `STATUS: NEEDS_CONTEXT`
 
-Установи `task.status = completed`.
-Установи `state.implement_spec_stage.current_task = null`.
+## Формат вывода
 
-### Шаг 10: Повторить
+Запиши результат в `.workflow/subagent-handoff.json`:
 
-Вернись к шагу 2, пока все задачи не будут `completed`.
-
-### Если задача не может быть выполнена
-
-Если внешняя зависимость не готова → `STATUS: BLOCKED`.
-Если не хватает информации → `STATUS: NEEDS_CONTEXT` (см. subagent-protocol.md).
-
-### Формат вывода (после всех задач)
-
+```json
+{
+  "phase": "implement-spec-stage",
+  "task_uuid": "{uuid}",
+  "status": "DONE",
+  "summary": "Реализована задача {title}, коммит abc1234",
+  "evidence": [
+    "feat/{uuid} (commit abc1234)",
+    "https://github.com/.../issues/N (comment)"
+  ]
+}
 ```
-STATUS: DONE | DONE_WITH_CONCERNS | BLOCKED
-SUMMARY: Реализовано N/M задач
-EVIDENCE:
-  - feat/{uuid1} (commit abc1234)
-  - feat/{uuid2} (commit def5678)
-  - https://github.com/.../issues/N (comment)
-```
+
+Возможные статусы: `DONE`, `DONE_WITH_CONCERNS`, `BLOCKED`, `NEEDS_CONTEXT`.

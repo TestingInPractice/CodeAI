@@ -1,123 +1,99 @@
 # Subagent Protocol
 
-## Output format
+Subagent запускается в **терминале 2** — отдельная opencode-сессия с чистым контекстом.
+Получает задание через `.workflow/subagent-handoff.json`, пишет результат туда же.
 
-Каждый subagent возвращает ровно 4 строки:
+## Запуск
 
-```
-STATUS: <DONE|DONE_WITH_CONCERNS|BLOCKED|NEEDS_CONTEXT>
-TASK_ID: <uuid задачи>
-SUMMARY: <1 строка, что сделано>
-EVIDENCE: <до 3 ссылок на файлы/тесты/логи>
-```
-
-## Status meanings
-
-| Status | Meaning | Orchestrator action |
-|--------|---------|---------------------|
-| DONE | Задача выполнена, все AC пройдены | → Judge |
-| DONE_WITH_CONCERNS | Выполнено, но есть open concerns | → Judge (решает rework или pass) |
-| BLOCKED | Внешняя зависимость не выполнена | → Human (с причиной в SUMMARY) |
-| NEEDS_CONTEXT | Не хватает информации (требования неясны) | → Open question → Human (до 2 уточнений), потом subagent |
-
-## Open questions protocol
-
-Когда subagent возвращает NEEDS_CONTEXT или judge FAIL с open questions:
-
-1. Оркестратор создаёт запись в `state.{section}.open_questions[]`:
+1. Оркестратор пишет `.workflow/subagent-handoff.json`:
    ```json
    {
-     "id": "oq-{uuid}",
-     "question": "текст вопроса от subagent/judge",
-     "answer": null,
-     "resolved": false
+     "phase": "plan-release",
+     "skill_ref": "skills/plan-release/SKILL.md",
+     "user_prompt": "plan-release",
+     "task_uuid": null
    }
    ```
-2. Оркестратор создаёт GitHub Issue с тегом `question`
-3. Ставит `state.status = "waiting_human"` (через `transition.py --action wait`)
-4. Пользователь отвечает в терминале → `transition.py --action resume`
-5. UPDATE `docs/specs/requirements.md` — секция 12 (Open Questions)
-6. ANSWER пишется в `state.{section}.open_questions[i].answer` + `resolved: true`
-7. Оркестратор перезапускает subagent с обновлённым контекстом
-8. После ответа subagent → judge заново
 
-### CLI: ответ пользователя
+2. Оркестратор говорит пользователю:
+   ```
+   Открой второй терминал в этом проекте, запусти opencode и скажи
+   "plan-release"
+   ```
 
-```bash
-# Оркестратор ждёт:
-echo "OQ-{uuid}: {question}"
-read USER_ANSWER
+3. Пользователь открывает терминал 2, запускает opencode, говорит фразу
 
-# Записать ответ в state
-python3 -c "
-import json
-s = json.load(open('.workflow/state.json'))
-oq = [q for q in s['plan_release']['open_questions'] if q['id'] == 'oq-{uuid}'][0]
-oq['answer'] = '$USER_ANSWER'
-oq['resolved'] = True
-json.dump(s, open('.workflow/state.json', 'w'))
-"
+4. В терминале 2 агент читает:
+   - `AGENTS.md` — bootstrap инструкция
+   - `.workflow/subagent-handoff.json` — что делать
+   - `skills/{phase}/SKILL.md` — инструкция фазы
+   - Файлы проекта по необходимости
 
-# resume
-python3 scripts/transition.py --project . --action resume
+5. После работы агент пишет в `.workflow/subagent-handoff.json`:
+
+## Output format
+
+Запись в `.workflow/subagent-handoff.json`:
+
+```json
+{
+  "phase": "plan-release",
+  "skill_ref": "skills/plan-release/SKILL.md",
+  "user_prompt": "plan-release",
+  "task_uuid": null,
+  "status": "DONE",
+  "summary": "Созданы goals.md, architecture.md, 5 задач",
+  "evidence": [
+    "docs/specs/goals.md",
+    "docs/specs/architecture.md"
+  ],
+  "open_questions": [],
+  "created_tasks": ["task-001", "task-002"],
+  "created_issues": []
+}
 ```
+
+### Status meanings
+
+| Status | Meaning |
+|--------|---------|
+| `DONE` | Задача выполнена, все AC пройдены |
+| `DONE_WITH_CONCERNS` | Выполнено, но есть open concerns |
+| `BLOCKED` | Внешняя зависимость не выполнена |
+| `NEEDS_CONTEXT` | Не хватает информации |
+
+## Open questions loop
+
+Когда subagent возвращает `NEEDS_CONTEXT` или judge FAIL с open questions:
+
+1. Оркестратор создаёт `state.{section}.open_questions[]: {"id": "oq-{uuid}", "question": "...", "answer": null, "resolved": false}`
+2. Ставит `state.status = "waiting_human"` через `transition.py --action wait`
+3. Пользователь отвечает в терминале 1
+4. Оркестратор пишет ответ в `state.{section}.open_questions[i]`, ставит `resolved: true`
+5. Обновляет `docs/specs/requirements.md` — секция 12
+6. `transition.py --action resume`
+7. Повторяет отправку в терминал 2
 
 ## Context management
 
 ### Чтение по фазам
 
-| Фаза | Читает | Не читает | Context budget |
-|------|--------|-----------|----------------|
-| `plan-release` | requirements.md (весь) | — | ≤5K |
-| `implement-spec-stage` | 1 task.md + contracts/ для F-XXX | state.json (весь) | ≤4K на задачу |
-| `write-tests` | contracts/ + spec секции 5, 9 | Код реализации (весь) | ≤6K |
-| `integrate-release` | CHANGELOG.md + git log | task.md (все) | ≤3K |
-| `deploy-release` | state.deploy_release + state.integrate_release + CHANGELOG.md | task.md, contracts/, spec/ | ≤2K |
-
-### Progressive loading
-
-Subagent читает файлы по мере необходимости, не все сразу:
-
-1. Прочитать state.json (только свою секцию по section_key)
-2. Если в секции есть ссылки на файлы (`spec_path`, `changelog_path`, задачи) — читать только их
-3. **Не читать** файлы других фаз (docs/specs/architecture.md, contracts/, не свои task.md)
+| Фаза | Читает | Context budget |
+|------|--------|----------------|
+| `plan-release` | requirements.md (весь), contracts/ | ≤5K |
+| `implement-spec-stage` | 1 task.md + contracts/ для F-XXX | ≤4K |
+| `write-tests` | contracts/ + spec секции 5, 9 | ≤6K |
+| `integrate-release` | CHANGELOG.md + git log | ≤3K |
+| `deploy-release` | state.deploy_release + CHANGELOG.md | ≤2K |
 
 ### Контекстный сброс между задачами
 
-Для `implement-spec-stage`:
-- Каждая задача — отдельный вызов subagent
-- Оркестратор передаёт только: `task.uuid`, `task.title`, `spec_ref`
-- После завершения задачи subagent завершается, контекст освобождается
-
-Для `write-tests`:
-- Один вызов, но не более 20 F-XXX за раз
-- Если F-XXX > 20 — разбить на батчи
-- Каждый батч = свежий вызов subagent с чистым контекстом
-
-Для `plan-release`:
-- Один вызов, но после секции 12 (Open Questions) — compaction
-- Если user ответил на все вопросы — перезапустить subagent заново (старый контекст сброшен)
-
-### Лимиты
-
-- SUMMARY: ≤200 символов
-- EVIDENCE: ≤3 ссылки, ≤500 символов всего
-- TASK_ID: UUID из phases.json
-- Context budget на файл: ≤1K токенов (если файл больше — читать offset/limit по секциям)
-
-## Git protocol (для developer subagent)
-
-1. `git checkout main && git pull`
-2. `git checkout -b feat/{TASK_ID}`
-3. Работать только в рамках этой ветки
-4. Коммитить только относящиеся к задаче файлы
-5. Написать unit-тесты
-6. После DONE + judge PASSED: создать commit + push
-7. Написать комментарий в GitHub Issue со ссылкой на коммит
-8. Вернуться на main (оркестратор смержит)
+- Каждая задача в `implement-spec-stage` — **отдельный запуск терминала 2**
+- Каждый батч в `write-tests` — отдельный запуск
+- После завершения subagent терминал 2 закрывается, контекст очищен
 
 ## Security
 
-- Subagent НЕ имеет права писать в .workflow/state.json
-- Subagent НЕ имеет права писать в phases.json
-- Все изменения состояния — только через оркестратор
+- Subagent НЕ пишет в `state.json`, НЕ пишет в `phases.json`
+- Subagent пишет только в `.workflow/subagent-handoff.json`
+- Все изменения состояния — через оркестратор в терминале 1

@@ -9,7 +9,10 @@ type: workflow
 step: 4
 ---
 
-# Integrate Release — Подготовка релиза
+# Integrate Release — Подготовка релиза (терминал 1)
+
+Выполняется оркестратором в Терминале 1 — merge, changelog, tag.
+Не требует отдельного субагента.
 
 ## Workflow Contract
 

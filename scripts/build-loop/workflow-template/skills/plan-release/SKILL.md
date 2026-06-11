@@ -4,35 +4,35 @@ description: >
   Фаза 1 workflow: чтение ТЗ (docs/specs/requirements.md),
   декомпозиция F-XXX на задачи, создание документов задач,
   GitHub Issues, open questions.
-  Triggers: "create tasks from spec", "decompose requirements",
-  "plan release".
+  Запускается в Терминале 2.
+  Triggers: "plan-release"
 type: workflow
 step: 1
 ---
 
 # Plan Release — Аналитика и декомпозиция
 
+## Запуск
+
+Запускается в Терминале 2 по инструкции оркестратора.
+Входная точка: прочитай `.workflow/subagent-handoff.json`.
+
 ## Workflow Contract
 
 entry:
-  artifacts:
-    - docs/specs/requirements.md
-    - .workflow/state.json
-  condition: state.phase == "plan-release" AND state.status == "in_progress"
+  condition: state.phase == "plan-release" AND status == "in_progress"
+  читать:
+    - .workflow/subagent-handoff.json (что делать)
+    - docs/specs/requirements.md (ТЗ)
+    - templates/tasks/task.md (шаблон задачи)
 
 exit:
-  condition: Все задачи созданы, judge PASSED
-  artifacts:
-    - .workflow/tasks/{uuid}.md (для каждой задачи)
+  создать:
     - docs/specs/goals.md
     - docs/specs/architecture.md
     - docs/specs/data-model.md
     - docs/specs/contracts/ (по файлу на эндпоинт)
-    - GitHub Issues (для каждой задачи)
-
-next_skill: implement-spec-stage (если judge PASSED)
-
----
+    - .workflow/tasks/{uuid}.md (для каждой задачи)
 
 ## Алгоритм
 
@@ -56,7 +56,7 @@ next_skill: implement-spec-stage (если judge PASSED)
 - **goals.md** — выжимка цели, scope, ключевые метрики успеха
 - **architecture.md** — стек, паттерны, компоненты, data flow (из секции 3)
 - **data-model.md** — итоговая ER-схема, описание полей (из секции 6)
-- **contracts/` — по файлу на API-эндпоинт (из секции 7):
+- **contracts/** — по файлу на API-эндпоинт (из секции 7):
   ```
   contracts/
   ├── auth.md           # POST /api/auth/telegram
@@ -85,13 +85,13 @@ gh issue create \
   --body "$(cat .workflow/tasks/{uuid}.md)"
 ```
 
-Если `gh` недоступен, сохрани локально с `local_ref`.
+Если `gh` недоступен, сохрани локально с пометкой `local_ref`.
 
-Запиши issue URL / local_ref в `plan_release.issues_created` и `plan_release.tasks[].issue`.
+Запиши issue URL / local_ref в результат (см. Формат вывода).
 
 ### Шаг 5: Open Questions
 
-После первого прохода заполни **секцию 12 (Open Questions)** в ТЗ, если:
+Если не хватает информации для декомпозиции — заполни секцию 12 в requirements.md:
 
 - Не хватает информации для декомпозиции
 - Архитектура неясна (не указан стек, БД)
@@ -100,21 +100,33 @@ gh issue create \
 
 Формат вопроса:
 ```
-- [ ] # OQ-{uuid}: {конкретный вопрос} | ref: {F-XXX или секция}
+- [ ] OQ-{uuid}: {конкретный вопрос} | ref: {F-XXX или секция}
 ```
 
 Если есть open questions → верни `STATUS: NEEDS_CONTEXT`.
-Оркестратор поставит `status: waiting_human` и дождётся ответа.
+Оркестратор поставит `waiting_human` и дождётся ответа.
 
-После получения ответов — обнови ТЗ и пересоздай задачи.
+## Формат вывода
 
-### Формат вывода
+Запиши результат в `.workflow/subagent-handoff.json`:
 
+```json
+{
+  "phase": "plan-release",
+  "status": "DONE",
+  "summary": "Создано N задач, M issues, O open questions",
+  "evidence": [
+    "docs/specs/goals.md",
+    "docs/specs/architecture.md",
+    ".workflow/tasks/{uuid1}.md"
+  ],
+  "created_tasks": [
+    {"uuid": "{uuid}", "title": "...", "issue_url": "https://github.com/.../issues/N"}
+  ],
+  "open_questions": [
+    {"id": "oq-{uuid}", "question": "..."}
+  ]
+}
 ```
-STATUS: DONE | NEEDS_CONTEXT
-SUMMARY: Создано N задач, M issues, O open questions
-EVIDENCE:
-  - .workflow/tasks/{uuid1}.md
-  - .workflow/tasks/{uuid2}.md
-  - https://github.com/.../issues/N
-```
+
+Возможные статусы: `DONE`, `NEEDS_CONTEXT`.

@@ -61,6 +61,10 @@ files:
     purpose: Hybrid structural + AI judge with IEEE 29148
     editable: false
 
+  AGENTS.md:
+    purpose: Bootstrap instruction — explains agent what to do with this repo
+    editable: true
+
   templates/tasks/task.md:
     purpose: Task document template (UUID, AC, spec_ref)
     editable: true

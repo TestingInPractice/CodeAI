@@ -1,52 +1,58 @@
 # Subagent Protocol
 
-Subagent запускается в **терминале 2** — отдельная opencode-сессия с чистым контекстом.
+Subagent запускается в **терминале 2**. Одна сессия = одна фаза + судья.
 Получает задание через `.workflow/subagent-handoff.json`, пишет результат туда же.
 
 ## Запуск
 
-1. Оркестратор пишет `.workflow/subagent-handoff.json`:
+1. Оркестратор (T1) пишет `.workflow/subagent-handoff.json`:
+
    ```json
    {
      "phase": "plan-release",
      "skill_ref": "skills/plan-release/SKILL.md",
-     "user_prompt": "plan-release",
-     "task_uuid": null
+     "user_prompt": "plan-release"
    }
    ```
 
-2. Оркестратор говорит пользователю:
+2. T1 говорит пользователю:
    ```
-   Открой второй терминал в этом проекте, запусти opencode и скажи
-   "plan-release"
+   Открой второй терминал в этом проекте, запусти opencode и скажи "{phase}"
    ```
 
-3. Пользователь открывает терминал 2, запускает opencode, говорит фразу
-
-4. В терминале 2 агент читает:
-   - `AGENTS.md` — bootstrap инструкция
+3. В T2 агент читает:
+   - `AGENTS.md` — bootstrap
    - `.workflow/subagent-handoff.json` — что делать
    - `skills/{phase}/SKILL.md` — инструкция фазы
-   - Файлы проекта по необходимости
 
-5. После работы агент пишет в `.workflow/subagent-handoff.json`:
+4. Выполняет работу (создание файлов, код, тесты, merge, changelog, deploy — по фазе)
 
-## Output format
+5. **Запускает судью:**
 
-Запись в `.workflow/subagent-handoff.json`:
+   ```bash
+   python3 scripts/evaluate_judge.py prepare \
+     --project . \
+     --rubric judge-rubrics/{phase}.json
+   ```
+
+   Если судья FAILED → дорабатывает, пока не PASSED.
+   (Кроме случая, когда нужна информация от пользователя — тогда `NEEDS_CONTEXT`.)
+
+6. Пишет результат в `.workflow/subagent-handoff.json`
+
+## Формат результата
 
 ```json
 {
   "phase": "plan-release",
-  "skill_ref": "skills/plan-release/SKILL.md",
-  "user_prompt": "plan-release",
-  "task_uuid": null,
   "status": "DONE",
   "summary": "Созданы goals.md, architecture.md, 5 задач",
   "evidence": [
     "docs/specs/goals.md",
     "docs/specs/architecture.md"
   ],
+  "judge_verdict": "passed",
+  "judge_score": 85,
   "open_questions": [],
   "created_tasks": ["task-001", "task-002"],
   "created_issues": []
@@ -57,43 +63,21 @@ Subagent запускается в **терминале 2** — отдельна
 
 | Status | Meaning |
 |--------|---------|
-| `DONE` | Задача выполнена, все AC пройдены |
-| `DONE_WITH_CONCERNS` | Выполнено, но есть open concerns |
+| `DONE` | Задача выполнена, judge PASSED |
+| `DONE_WITH_CONCERNS` | Выполнено, judge PASSED, но есть concerns |
 | `BLOCKED` | Внешняя зависимость не выполнена |
-| `NEEDS_CONTEXT` | Не хватает информации |
+| `NEEDS_CONTEXT` | Не хватает информации — open question |
 
-## Open questions loop
+## Open questions
 
-Когда subagent возвращает `NEEDS_CONTEXT` или judge FAIL с open questions:
+Если нужна информация от пользователя:
 
-1. Оркестратор создаёт `state.{section}.open_questions[]: {"id": "oq-{uuid}", "question": "...", "answer": null, "resolved": false}`
-2. Ставит `state.status = "waiting_human"` через `transition.py --action wait`
-3. Пользователь отвечает в терминале 1
-4. Оркестратор пишет ответ в `state.{section}.open_questions[i]`, ставит `resolved: true`
-5. Обновляет `docs/specs/requirements.md` — секция 12
-6. `transition.py --action resume`
-7. Повторяет отправку в терминал 2
-
-## Context management
-
-### Чтение по фазам
-
-| Фаза | Читает | Context budget |
-|------|--------|----------------|
-| `plan-release` | requirements.md (весь), contracts/ | ≤5K |
-| `implement-spec-stage` | 1 task.md + contracts/ для F-XXX | ≤4K |
-| `write-tests` | contracts/ + spec секции 5, 9 | ≤6K |
-| `integrate-release` | CHANGELOG.md + git log | ≤3K |
-| `deploy-release` | state.deploy_release + CHANGELOG.md | ≤2K |
-
-### Контекстный сброс между задачами
-
-- Каждая задача в `implement-spec-stage` — **отдельный запуск терминала 2**
-- Каждый батч в `write-tests` — отдельный запуск
-- После завершения subagent терминал 2 закрывается, контекст очищен
+1. Запиши в результат `"status": "NEEDS_CONTEXT"`, заполни `open_questions[]`
+2. T1 прочитает, создаст вопросы, поставит `waiting_human`
+3. После ответа пользователя T1 обновляет handoff и говорит "открой T2 снова"
 
 ## Security
 
-- Subagent НЕ пишет в `state.json`, НЕ пишет в `phases.json`
-- Subagent пишет только в `.workflow/subagent-handoff.json`
-- Все изменения состояния — через оркестратор в терминале 1
+- T2 **никогда** не пишет в `state.json` и `phases.json`
+- T2 пишет только в `.workflow/subagent-handoff.json` и рабочие файлы проекта
+- Все изменения состояния — через `scripts/transition.py` в T1

@@ -1,28 +1,32 @@
 # CodeAI Build Loop — Workflow Template
 
 6 фаз: `plan-release → implement-spec-stage → write-tests → integrate-release → deploy-release`
-Два терминала: 1 = оркестратор, 2 = субагент.
 
-## Если это Терминал 1 (оркестратор)
+## Терминал 1 (оркестратор)
 
-Прочитай `.workflow/state.json` и следуй текущей фазе:
+Только смотрит состояние и говорит, что делать:
 
-1. `transition.py --project . --action start —to {phase}`
-2. Скажи пользователю: "Открой Терминал 2, скажи `{phase}`"
-3. Жди "готово", прочитай `.workflow/subagent-handoff.json`
-4. Запусти судью: `scripts/evaluate_judge.py prepare --rubric judge-rubrics/{phase}.json`
-5. Если PASSED → переход к следующей фазе
+1. Прочитай `.workflow/state.json` — узнай текущую фазу
+2. Запиши `.workflow/subagent-handoff.json` с `phase` и `skill_ref`
+3. Скажи пользователю: "Открой T2, скажи `{phase}`"
+4. Когда вернутся — прочитай `subagent-handoff.json`
+5. Если `judge_verdict == "passed"`:
+   - `python3 scripts/transition.py --project . --action transition`
+   - Повтори с шага 1
+6. Если иначе — объясни, пользователь открывает T2 снова
 
 Подробно: `skills/workflow-core/SKILL.md`
 
-## Если это Терминал 2 (субагент)
+## Терминал 2 (исполнитель + судья)
 
-Прочитай `.workflow/subagent-handoff.json` — там будет `skill_ref` и `task_uuid`.
+Всё в одной сессии: работа + судья.
 
-Следуй инструкции из `{skill_ref}`.
-
-После завершения запиши результат обратно в `.workflow/subagent-handoff.json`.
-Этот терминал можно закрыть.
+1. Прочитай `.workflow/subagent-handoff.json`
+2. Следуй `{skill_ref}` — делай фазу
+3. Запусти судью: `python3 scripts/evaluate_judge.py prepare --project . --rubric judge-rubrics/{phase}.json`
+4. Если FAILED — исправляй, пока не PASSED
+5. Запиши результат в `.workflow/subagent-handoff.json`
+6. Закрой терминал
 
 ## Контекст
 
@@ -30,4 +34,3 @@
 - Протокол: `skills/workflow-core/references/subagent-protocol.md`
 - Судья: `scripts/evaluate_judge.py` + `judge-rubrics/`
 - Состояние: `.workflow/state.json` (читай/пиши только через `scripts/transition.py`)
-- Установки не нужны — всё из этой директории

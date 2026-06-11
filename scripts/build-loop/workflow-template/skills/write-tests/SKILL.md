@@ -1,106 +1,63 @@
 ---
 name: write-tests
 description: >
-  Фаза 3 workflow: интеграционные, e2e и регрессионные тесты по ТЗ.
+  Фаза 3 workflow: интеграционные, e2e, регрессионные тесты по ТЗ + судья.
   Запускается в Терминале 2.
-  Triggers: "write-tests", "test coverage check"
+  Triggers: "write-tests"
 type: workflow
 step: 3
 ---
 
-# Write Tests — Интеграционное тестирование (терминал 2)
+# Write Tests — Тестирование (терминал 2)
 
 ## Запуск
 
-Запускается в Терминале 2 по инструкции оркестратора.
-Входная точка: прочитай `.workflow/subagent-handoff.json`.
+Прочитай `.workflow/subagent-handoff.json`.
 
-## Workflow Contract
-
-entry:
-  condition: state.phase == "write-tests" AND status == "in_progress"
-  читать:
-    - .workflow/subagent-handoff.json
-    - docs/specs/requirements.md (F-XXX)
-    - docs/specs/contracts/ (API контракты)
-    - docs/specs/data-model.md
-    - реализованный код (из implement-spec-stage)
-
-exit:
-  создать:
-    - tests/integration/
-    - tests/e2e/
-    - tests/regression/
+Читать:
+- `docs/specs/requirements.md` (F-XXX)
+- `docs/specs/contracts/`
+- `docs/specs/data-model.md`
+- реализованный код
 
 ## Алгоритм
 
-### Шаг 1: Создать тест-кейсы по ТЗ
+### Шаг 1-4: Написать тесты
 
-Для каждого F-XXX из `docs/specs/requirements.md` (секция 5) создай:
+- `tests/integration/` — для каждого API-контракта: success + error
+- `tests/e2e/` — для каждого сценария из секции 2
+- `tests/regression/` — для каждого AC из секции 9
 
-| Тип теста | Когда |
-|---|---|
-| `integration` | Для каждого API-контракта из `docs/specs/contracts/` |
-| `e2e` | Для каждого сценария из секции 2 (Цель) |
-| `regression` | Для каждого AC из секции 9 |
+Каждый F-XXX минимум 1 тест. Негативные сценарии обязательны.
 
-Правила:
-- **Каждый F-XXX** покрыт минимум 1 тест-кейсом
-- **Каждый API-эндпоинт**: success + error (400, 401, 404, 500)
-- **Негативные сценарии** обязательны
-- **Граничные случаи**: пустые списки, максимумы, спецсимволы
-
-### Шаг 2: Написать integration тесты
-
-`tests/integration/{endpoint}_test.{ext}` — позитивные + негативные сценарии.
-
-```bash
-pytest tests/integration/ -v
-```
-
-### Шаг 3: Написать e2e тесты
-
-`tests/e2e/{scenario}_test.{ext}` — полный flow: авторизация → действие → проверка.
-
-### Шаг 4: Написать regression тесты
-
-`tests/regression/{ac_id}_test.{ext}` — проверка, что фича не сломалась.
-
-### Шаг 5: Запустить все тесты
+### Шаг 5: Запустить
 
 ```bash
 pytest tests/ -v --tb=short
+pytest tests/ --cov=. --cov-report=term --cov-fail-under=80
 ```
 
-### Шаг 6: Проверить coverage
+### Шаг 6: Запустить судью
 
 ```bash
-pytest tests/ --cov=. --cov-report=term --cov-fail-under={80}
+python3 scripts/evaluate_judge.py prepare --project . --rubric judge-rubrics/tester.json
 ```
 
-Если coverage < threshold → верни `DONE_WITH_CONCERNS`.
+Если FAILED → исправь → перезапусти судью.
 
-### Если баг в реализации
-
-→ верни `STATUS: BLOCKED`, укажи F-XXX и описание.
-
-## Формат вывода
+### Шаг 7: Записать результат
 
 ```json
 {
   "phase": "write-tests",
   "status": "DONE",
-  "summary": "N тестов: M passed / F failed, coverage = X%",
-  "evidence": [
-    "tests/integration/auth_test.py",
-    "tests/e2e/registration_test.py",
-    "tests/regression/ac_001_test.py"
-  ],
+  "summary": "N тестов: M passed, coverage = X%",
+  "judge_verdict": "passed",
+  "judge_score": 85,
   "coverage": 85,
-  "bugs": [
-    {"id": "BUG-001", "description": "POST /api/login returns 500"}
-  ]
+  "bugs": [],
+  "evidence": ["tests/integration/auth_test.py"]
 }
 ```
 
-Возможные статусы: `DONE`, `DONE_WITH_CONCERNS`, `BLOCKED`.
+Статусы: `DONE`, `DONE_WITH_CONCERNS`, `BLOCKED`.

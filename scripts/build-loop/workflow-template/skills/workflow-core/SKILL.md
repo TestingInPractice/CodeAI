@@ -83,29 +83,38 @@ uses:
 7. Запусти судью (см. references/judge-rubric.md)
 8. Если judge PASSED → перейди к следующей фазе
 9. Если judge FAILED → верни в текущую фазу на доработку
-10. Если context > 70% → выполни compaction (см. ниже)
+10. Если контекст >70% → переключись на новый терминал (см. ниже)
 
-### Компакшен контекста
+### Переключение терминала при переполнении контекста
 
 Когда контекст приближается к 70%:
 
-```
-Current objective: {текущая цель}
-Active phase: {phase} ({status})
-Current task: {task.id if any}
-State: .workflow/state.json
-Phases: .workflow/phases.json
-Key specs: docs/specs/*.md
+1. Запиши текущее состояние в `state.json` (если есть незавершённое — сохрани как `in_progress`)
 
-Recent actions (summary):
-{последние 3 действия, 1 строка каждое}
+2. Скажи пользователю:
 
-Pending:
-{следующие шаги}
+   ```
+   Контекст >70%. Открой новый терминал в этом проекте,
+   запусти opencode и скажи "продолжить workflow".
+   Я сохранил состояние. Текущая фаза: {phase} ({status}).
+   ```
 
-Do not redo:
-{завершённые шаги}
-```
+3. Сохрани контекстный слепок в `.workflow/context-handoff.json`:
+
+   ```json
+   {
+     "phase": "{phase}",
+     "status": "{status}",
+     "task": "{current_task.uuid}",
+     "completed": ["фазы/задачи"],
+     "pending": ["следующие шаги"],
+     "notes": "что было сделано в этой сессии"
+   }
+   ```
+
+4. Заверши текущую сессию (прочитай state.json в новом терминале)
+
+**В новой сессии** — прочитай `.workflow/context-handoff.json`, чтобы восстановить контекст, затем удали его.
 
 ### Shortcut: apply-small-fix
 

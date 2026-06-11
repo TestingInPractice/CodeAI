@@ -1,0 +1,42 @@
+{
+  "phases": [
+    {
+      "id": "plan-release",
+      "description": "Аналитика",
+      "status": "completed",
+      "tasks": [
+        { "id": 1, "uuid": "task-001", "title": "Auth", "status": "completed" },
+        { "id": 2, "uuid": "task-002", "title": "Payments", "status": "completed" }
+      ]
+    },
+    {
+      "id": "implement-spec-stage",
+      "description": "Разработка",
+      "status": "completed",
+      "tasks": [
+        { "id": 1, "uuid": "impl-001", "title": "Auth impl", "status": "completed" },
+        { "id": 2, "uuid": "impl-002", "title": "Payments impl", "status": "completed" }
+      ]
+    },
+    {
+      "id": "write-tests",
+      "description": "Тестирование",
+      "status": "completed",
+      "tasks": [
+        { "id": 1, "uuid": "tc-001", "title": "Auth test", "status": "completed" }
+      ]
+    },
+    {
+      "id": "integrate-release",
+      "description": "Релиз",
+      "status": "completed",
+      "tasks": []
+    },
+    {
+      "id": "deploy-release",
+      "description": "Деплой",
+      "status": "pending",
+      "tasks": []
+    }
+  ]
+}

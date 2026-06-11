@@ -1,0 +1,53 @@
+{
+  "phase": "plan-release",
+  "status": "in_progress",
+  "subphase": null,
+  "questions": { "analyst": [], "developer": [], "tester": [] },
+  "plan_release": {
+    "status": "in_progress",
+    "spec_path": "tests/fixtures/spec.md",
+    "spec_docs": [],
+    "tasks": [
+      { "id": 1, "uuid": "task-001", "title": "Auth", "status": "completed", "spec_ref": "F-001" },
+      { "id": 2, "uuid": "task-002", "title": "Payments", "status": "completed", "spec_ref": "F-002" }
+    ],
+    "issues_created": [],
+    "judge_verdict": null,
+    "open_questions": []
+  },
+  "implement_spec_stage": {
+    "status": "completed",
+    "current_task": null,
+    "tasks": [
+      { "id": 1, "uuid": "impl-001", "title": "Auth impl", "status": "completed", "judge_verdict": "passed", "issue": { "number": 1 } },
+      { "id": 2, "uuid": "impl-002", "title": "Payments impl", "status": "completed", "judge_verdict": "passed", "issue": { "number": 2 } }
+    ],
+    "branch": null,
+    "judge_verdict": "passed"
+  },
+  "write_tests": {
+    "status": "completed",
+    "test_cases": [
+      { "id": "TC-001", "title": "Auth test", "ref_issue": "F-001", "type": "integration", "status": "passed" },
+      { "id": "TC-002", "title": "Payments test", "ref_issue": "F-002", "type": "e2e", "status": "passed" },
+      { "id": "TC-003", "title": "Profile test", "ref_issue": "F-003", "type": "integration", "status": "passed" }
+    ],
+    "judge_verdict": "passed",
+    "coverage": { "percentage": 85, "threshold": 80 }
+  },
+  "integrate_release": {
+    "status": "completed",
+    "changelog_path": "CHANGELOG.md",
+    "merge_branch": "main",
+    "release_version": "v0.1.0"
+  },
+  "deploy_release": {
+    "status": "pending",
+    "target_env": null,
+    "config_path": ".infra/config.json",
+    "report_path": null,
+    "bugs": []
+  },
+  "emergency": { "active": false, "reason": null, "approved_by": null },
+  "commands": []
+}

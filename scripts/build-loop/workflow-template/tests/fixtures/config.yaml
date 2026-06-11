@@ -1,0 +1,31 @@
+allowed_transitions:
+  from_any: [plan-release, implement-spec-stage, write-tests, integrate-release, deploy-release]
+  plan-release: [implement-spec-stage]
+  implement-spec-stage: [write-tests]
+  write-tests: [integrate-release]
+  integrate-release: [deploy-release]
+  deploy-release: []
+
+entry_gates:
+  plan-release:
+    - check: docs/specs/requirements.md exists
+  implement-spec-stage:
+    - check: state.plan_release.judge_verdict == "passed"
+  write-tests:
+    - check: state.implement_spec_stage.judge_verdict == "passed"
+  integrate-release:
+    - check: state.write_tests.judge_verdict == "passed"
+  deploy-release:
+    - check: state.integrate_release.release_version != null
+
+exit_gates:
+  plan-release:
+    - check: all tasks completed
+  implement-spec-stage:
+    - check: all tasks completed
+  write-tests:
+    - check: coverage >= threshold
+  integrate-release:
+    - check: release_version set
+  deploy-release:
+    - check: report_path set

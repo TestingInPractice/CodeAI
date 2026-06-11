@@ -2,3 +2,4 @@
 .DS_Store
 .obsidian-hybrid-search.db*
 docs/_astro/
+*/__pycache__/

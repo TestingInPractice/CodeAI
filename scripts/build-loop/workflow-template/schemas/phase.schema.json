@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workflow-phase-schema",
+  "title": "Workflow Phases Schema",
+  "description": "Schema for .workflow/phases.json — список фаз и задач",
+
+  "type": "object",
+  "required": ["version", "phases"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Версия схемы фаз"
+    },
+    "phases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "status"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID фазы (analytics, development, testing, deploy)"
+          },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "in_progress", "completed", "failed", "skipped"]
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "uuid", "title", "status"],
+              "properties": {
+                "id": { "type": "integer" },
+                "uuid": { "type": "string", "description": "Локальный UUID — первичный ключ" },
+                "title": { "type": "string" },
+                "description": { "type": "string" },
+                "status": {
+                  "type": "string",
+                  "enum": ["pending", "in_progress", "completed", "blocked", "failed"]
+                },
+                "assigned_role": {
+                  "type": "string",
+                  "enum": ["analyst", "developer", "tester"]
+                },
+                "branch": { "type": ["string", "null"] },
+                "issue": {
+                  "type": "object",
+                  "properties": {
+                    "url": { "type": "string" },
+                    "number": { "type": "integer" },
+                    "state": { "type": "string", "enum": ["open", "closed"] }
+                  }
+                },
+                "local_ref": { "type": ["string", "null"] },
+                "dependencies": {
+                  "type": "array",
+                  "items": { "type": "integer" },
+                  "description": "ID задач-зависимостей"
+                },
+                "created_at": { "type": "string", "format": "date-time" },
+                "completed_at": { "type": ["string", "null"], "format": "date-time" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

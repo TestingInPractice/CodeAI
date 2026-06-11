@@ -1,0 +1,54 @@
+{
+  "phase": "plan-release",
+  "status": "pending",
+  "subphase": null,
+  "questions": {
+    "analyst": [],
+    "developer": [],
+    "tester": []
+  },
+  "plan_release": {
+    "status": "pending",
+    "spec_path": "docs/specs/requirements.md",
+    "spec_docs": [],
+    "tasks": [],
+    "issues_created": [],
+    "judge_verdict": null,
+    "open_questions": []
+  },
+  "implement_spec_stage": {
+    "status": "pending",
+    "current_task": null,
+    "tasks": [],
+    "branch": null,
+    "judge_verdict": null
+  },
+  "write_tests": {
+    "status": "pending",
+    "test_cases": [],
+    "judge_verdict": null,
+    "coverage": {
+      "percentage": 0,
+      "threshold": 80
+    }
+  },
+  "integrate_release": {
+    "status": "pending",
+    "changelog_path": null,
+    "merge_branch": null,
+    "release_version": null
+  },
+  "deploy_release": {
+    "status": "pending",
+    "target_env": null,
+    "config_path": ".infra/config.json",
+    "report_path": null,
+    "bugs": []
+  },
+  "emergency": {
+    "active": false,
+    "reason": null,
+    "approved_by": null
+  },
+  "commands": []
+}

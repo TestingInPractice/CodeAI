@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workflow-state-schema",
+  "title": "Workflow State Schema",
+  "description": "Schema for .workflow/state.json — машина состояний CodeAI Build Loop",
+
+  "type": "object",
+  "required": ["phase", "status", "questions", "plan_release", "implement_spec_stage", "write_tests", "integrate_release", "deploy_release", "emergency"],
+
+  "properties": {
+    "phase": {
+      "type": "string",
+      "enum": ["plan-release", "implement-spec-stage", "write-tests", "integrate-release", "deploy-release", "apply-small-fix", "bugs"],
+      "description": "Текущая фаза"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "in_progress", "waiting_human", "completed", "failed"],
+      "description": "Статус текущей фазы"
+    },
+    "subphase": {
+      "type": ["string", "null"],
+      "description": "Текущий sub-step внутри фазы (опционально)"
+    },
+    "questions": {
+      "type": "object",
+      "required": ["analyst", "developer", "tester"],
+      "properties": {
+        "analyst": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Ссылки на GitHub Issues с вопросами аналитика"
+        },
+        "developer": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Ссылки на GitHub Issues с вопросами разработчика"
+        },
+        "tester": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Ссылки на GitHub Issues с вопросами тестировщика"
+        }
+      }
+    },
+    "plan_release": {
+      "type": "object",
+      "required": ["status", "spec_path", "tasks", "issues_created", "judge_verdict", "open_questions"],
+      "properties": {
+        "status": { "type": "string", "enum": ["pending", "in_progress", "completed", "failed"] },
+        "spec_path": { "type": "string", "description": "Путь к файлу ТЗ" },
+        "spec_docs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Созданные документы спецификации (ADR, goals, architecture, contracts/)"
+        },
+        "tasks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "title", "status"],
+            "properties": {
+              "id": { "type": "integer" },
+              "uuid": { "type": "string" },
+              "title": { "type": "string" },
+              "status": { "type": "string", "enum": ["pending", "in_progress", "completed", "blocked", "failed"] },
+              "spec_ref": { "type": "string", "description": "Ссылка на раздел исходного ТЗ" },
+              "issue": {
+                "type": "object",
+                "properties": {
+                  "url": { "type": "string" },
+                  "number": { "type": "integer" },
+                  "state": { "type": "string", "enum": ["open", "closed"] }
+                }
+              },
+              "local_ref": { "type": ["string", "null"], "description": "Локальный файл задачи, если GitHub Issue не создан" }
+            }
+          }
+        },
+        "issues_created": { "type": "array", "items": { "type": "string" } },
+        "judge_verdict": { "type": ["string", "null"], "enum": [null, "passed", "failed", "passed_with_concerns"] },
+        "open_questions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "question": { "type": "string" },
+              "answer": { "type": ["string", "null"] },
+              "resolved": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    },
+    "implement_spec_stage": {
+      "type": "object",
+      "required": ["status", "current_task", "tasks", "branch", "judge_verdict"],
+      "properties": {
+        "status": { "type": "string", "enum": ["pending", "in_progress", "completed", "failed"] },
+        "current_task": { "type": ["string", "null"] },
+        "tasks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "title", "status"],
+            "properties": {
+              "id": { "type": "integer" },
+              "uuid": { "type": "string" },
+              "title": { "type": "string" },
+              "status": { "type": "string", "enum": ["pending", "in_progress", "completed", "blocked", "failed"] },
+              "branch": { "type": ["string", "null"] },
+              "judge_verdict": { "type": ["string", "null"], "enum": [null, "passed", "failed", "passed_with_concerns"] },
+              "issue_comment": { "type": ["string", "null"], "description": "URL комментария к GitHub Issue после коммита" },
+              "issue": {
+                "type": "object",
+                "properties": {
+                  "url": { "type": "string" },
+                  "number": { "type": "integer" },
+                  "state": { "type": "string", "enum": ["open", "closed"] }
+                }
+              }
+            }
+          }
+        },
+        "branch": { "type": ["string", "null"], "description": "Текущая ветка разработки" },
+        "judge_verdict": { "type": ["string", "null"], "enum": [null, "passed", "failed", "passed_with_concerns"] }
+      }
+    },
+    "write_tests": {
+      "type": "object",
+      "required": ["status", "test_cases", "judge_verdict"],
+      "properties": {
+        "status": { "type": "string", "enum": ["pending", "in_progress", "completed", "failed"] },
+        "test_cases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "title", "ref_issue", "status"],
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" },
+              "ref_issue": { "type": "string", "description": "Ссылка на GitHub Issue или uuid задачи" },
+              "type": { "type": "string", "enum": ["integration", "e2e", "manual", "regression"] },
+              "scenario": { "type": "string", "description": "Описание сценария" },
+              "expected": { "type": "string", "description": "Ожидаемый результат" },
+              "status": { "type": "string", "enum": ["pending", "passed", "failed"] }
+            }
+          }
+        },
+        "judge_verdict": { "type": ["string", "null"], "enum": [null, "passed", "failed", "passed_with_concerns"] },
+        "coverage": {
+          "type": "object",
+          "properties": {
+            "percentage": { "type": "number", "minimum": 0, "maximum": 100 },
+            "threshold": { "type": "number", "minimum": 0, "maximum": 100 }
+          }
+        }
+      }
+    },
+    "integrate_release": {
+      "type": "object",
+      "required": ["status", "changelog_path", "release_version"],
+      "properties": {
+        "status": { "type": "string", "enum": ["pending", "in_progress", "completed", "failed"] },
+        "changelog_path": { "type": ["string", "null"] },
+        "merge_branch": { "type": ["string", "null"] },
+        "release_version": { "type": ["string", "null"] }
+      }
+    },
+    "deploy_release": {
+      "type": "object",
+      "required": ["status", "target_env", "config_path", "report_path"],
+      "properties": {
+        "status": { "type": "string", "enum": ["pending", "in_progress", "completed", "failed", "waiting_approval"] },
+        "target_env": { "type": ["string", "null"], "enum": [null, "dev", "test", "preprod", "prod"] },
+        "config_path": { "type": "string", "description": "Путь к конфигу с доступами" },
+        "report_path": { "type": ["string", "null"], "description": "Путь к отчёту пользователя" },
+        "bugs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "description": { "type": "string" },
+              "status": { "type": "string", "enum": ["open", "fixed", "verified"] }
+            }
+          }
+        }
+      }
+    },
+    "emergency": {
+      "type": "object",
+      "description": "Emergency override для deadlock recovery",
+      "required": ["active", "reason", "approved_by"],
+      "properties": {
+        "active": { "type": "boolean", "default": false },
+        "reason": { "type": ["string", "null"] },
+        "approved_by": { "type": ["string", "null"] }
+      }
+    },
+    "commands": {
+      "type": "array",
+      "description": "Очередь команд от mcp_server (не пишется напрямую, читается из commands/)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "action": { "type": "string", "enum": ["transition", "override", "reject"] },
+          "target_phase": { "type": "string" },
+          "approved_by": { "type": "string" }
+        }
+      }
+    }
+  }
+}

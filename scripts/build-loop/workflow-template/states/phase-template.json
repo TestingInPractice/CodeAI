@@ -1,0 +1,47 @@
+{
+  "version": "1.0",
+  "phases": [
+    {
+      "id": "plan-release",
+      "title": "Планирование релиза",
+      "description": "Создание ТЗ, декомпозиция на задачи, создание GitHub Issues, проверка судьёй",
+      "status": "pending",
+      "tasks": []
+    },
+    {
+      "id": "implement-spec-stage",
+      "title": "Реализация этапа ТЗ",
+      "description": "Последовательная разработка задач, unit-тесты, code review судьёй",
+      "status": "pending",
+      "tasks": []
+    },
+    {
+      "id": "write-tests",
+      "title": "Написание тестов",
+      "description": "Интеграционные/e2e/регрессионные тесты по ТЗ, проверка покрытия судьёй",
+      "status": "pending",
+      "tasks": []
+    },
+    {
+      "id": "integrate-release",
+      "title": "Интеграция релиза",
+      "description": "Changelog, merge ветки, подготовка релиза",
+      "status": "pending",
+      "tasks": []
+    },
+    {
+      "id": "deploy-release",
+      "title": "Деплой релиза",
+      "description": "Развёртывание на выбранное окружение, smoke-тесты, отчёт",
+      "status": "pending",
+      "tasks": []
+    },
+    {
+      "id": "apply-small-fix",
+      "title": "Быстрый фикс",
+      "description": "Короткий маршрут: small fix → integrate → deploy",
+      "status": "pending",
+      "tasks": []
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+name: codeai-build-loop
+version: 1.0.0
+description: CodeAI Build Loop — Multi-Agent Workflow Framework
+created: 2026-06-11
+
+files:
+  schemas/state.schema.json:
+    purpose: JSON Schema for state.json validation
+    editable: false
+  schemas/phase.schema.json:
+    purpose: JSON Schema for phases.json validation
+    editable: false
+
+  states/initial.json:
+    purpose: Default initial state
+    editable: true
+  states/phase-template.json:
+    purpose: Phase definition template
+    editable: true
+
+  judge-rubrics/analyst.json:
+    purpose: Rubric for analyst judge
+    editable: true
+  judge-rubrics/developer.json:
+    purpose: Rubric for developer judge
+    editable: true
+  judge-rubrics/tester.json:
+    purpose: Rubric for tester judge
+    editable: true
+
+  config.yaml:
+    purpose: Project-specific transition rules
+    editable: true
+    generated: true
+
+  skills/workflow-core/SKILL.md:
+    purpose: Master orchestrator skill
+    editable: true
+  skills/workflow-core/references/subagent-protocol.md:
+    purpose: Subagent status protocol
+    editable: true
+  skills/workflow-core/references/judge-rubric.md:
+    purpose: Judge scoring protocol
+    editable: true
+
+
+  scripts/validate_state.py:
+    purpose: State validation (schema + invariants + gates)
+    editable: false
+  scripts/transition.py:
+    purpose: Atomic state transition with locking
+    editable: false
+  scripts/init_workflow.py:
+    purpose: Template deployment tool
+    editable: false

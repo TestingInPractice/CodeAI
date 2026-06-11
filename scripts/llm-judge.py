@@ -115,17 +115,51 @@ def score_context_precision(context):
     return (0.75 if len(words) >= 10 and len(words) <= 2000 else 0.5), issues
 
 
-def evaluate(question, response, context=""):
+def score_ac(response, phase_id="", phases_path=""):
+    """Оценивает, выполнены ли acceptance criteria фазы."""
+    if not phase_id or not phases_path or not os.path.isfile(phases_path):
+        return 0.5, ["ac_check_skipped_no_phases_data"]
+    try:
+        with open(phases_path) as f:
+            data = json.load(f)
+    except Exception:
+        return 0.5, ["ac_check_skipped_cant_read_phases"]
+    ac_list = []
+    for p in data.get("phases", []):
+        if str(p.get("id")) == str(phase_id):
+            ac_list = p.get("acceptance_criteria", [])
+            break
+    if not ac_list:
+        return 0.5, ["ac_check_skipped_no_criteria"]
+    response_lower = response.lower()
+    covered = 0
+    for ac in ac_list:
+        ac_lower = ac.lower().strip("- []").strip()
+        # Check if response mentions key terms from AC
+        terms = tokenize(ac_lower)
+        if terms and len(terms & tokenize(response_lower)) / len(terms) >= 0.3:
+            covered += 1
+    ratio = covered / len(ac_list)
+    issues = []
+    if ratio < 0.5:
+        issues.append(f"ac_low_coverage: {covered}/{len(ac_list)} criteria met")
+    score = 0.25 if ratio < 0.3 else 0.5 if ratio < 0.7 else 0.75 if ratio < 1.0 else 1.0
+    return score, issues
+
+
+def evaluate(question, response, context="", phase_id="", phases_path=""):
     r = score_relevance(question, response)
     f = score_faithfulness(response, context)
     cp = score_context_precision(context)
+    ac = score_ac(response, phase_id, phases_path)
 
-    overall = (r[0] + f[0] + cp[0]) / 3
+    overall = (r[0] + f[0] + cp[0] + ac[0]) / 4
 
     return {
         "relevance": {"score": r[0], "issues": r[1]},
         "faithfulness": {"score": f[0], "issues": f[1]},
         "context_precision": {"score": cp[0], "issues": cp[1]},
+        "ac_check": {"score": ac[0], "issues": ac[1]},
         "overall": round(overall, 3),
         "passed": overall >= 0.5,
     }
@@ -134,11 +168,12 @@ def evaluate(question, response, context=""):
 def print_result(result, verbose=True):
     print(json.dumps(result, indent=2, ensure_ascii=False))
     if verbose:
-        print(f"\n  Overall: {result['overall']:.2f} {'PASS' if result['passed'] else 'FAIL'}")
+        print(f"\n  Overall:           {result['overall']:.2f} {'PASS' if result['passed'] else 'FAIL'}")
         print(f"  Relevance:         {result['relevance']['score']:.2f} {'!'*len(result['relevance']['issues'])}")
         print(f"  Faithfulness:      {result['faithfulness']['score']:.2f} {'!'*len(result['faithfulness']['issues'])}")
         print(f"  Context Precision: {result['context_precision']['score']:.2f} {'!'*len(result['context_precision']['issues'])}")
-        all_issues = result['relevance']['issues'] + result['faithfulness']['issues'] + result['context_precision']['issues']
+        print(f"  AC Check:          {result['ac_check']['score']:.2f} {'!'*len(result['ac_check']['issues'])}")
+        all_issues = result['relevance']['issues'] + result['faithfulness']['issues'] + result['context_precision']['issues'] + result['ac_check']['issues']
         if all_issues:
             print(f"  Issues: {', '.join(all_issues)}")
 
@@ -180,6 +215,8 @@ def main():
     ap.add_argument("--question", "-q", help="Вопрос пользователя")
     ap.add_argument("--response", "-r", help="Ответ LLM")
     ap.add_argument("--context", "-c", help="Контекст (документы, RAG)", default="")
+    ap.add_argument("--phase-id", help="ID фазы для проверки acceptance criteria")
+    ap.add_argument("--phases-path", help="Путь к phases.json для AC check")
     ap.add_argument("--batch", "-b", help="JSONL-файл с кейсами")
     ap.add_argument("--output", "-o", help="Файл для результатов batch")
     ap.add_argument("--scan-docs", action="store_true",
@@ -198,7 +235,7 @@ def main():
                     cases.append(json.loads(line))
         results = []
         for c in cases:
-            res = evaluate(c.get("question", ""), c.get("response", ""), c.get("context", ""))
+            res = evaluate(c.get("question", ""), c.get("response", ""), c.get("context", ""), c.get("phase_id", ""), c.get("phases_path", ""))
             res["id"] = c.get("id", len(results))
             results.append(res)
         out_path = args.output or "judge-results.json"
@@ -219,7 +256,7 @@ def main():
             with open(val) as f:
                 setattr(args, arg, f.read())
 
-    result = evaluate(args.question, args.response, args.context)
+    result = evaluate(args.question, args.response, args.context, args.phase_id or "", args.phases_path or "")
     print_result(result)
 
 

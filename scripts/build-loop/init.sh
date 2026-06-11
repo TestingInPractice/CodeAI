@@ -30,6 +30,15 @@ echo "=== Build Loop: Init $PROJECT ==="
 # State directory
 mkdir -p "$PROJECT/.build-loop"
 
+# Copy judge script into project
+BUILD_LOOP_DIR_INIT="$(cd "$(dirname "$0")" && pwd)"
+JUDGE_DIR="$PROJECT/scripts/judge"
+if [ ! -f "$JUDGE_DIR/llm-judge.py" ]; then
+  mkdir -p "$JUDGE_DIR"
+  cp "$BUILD_LOOP_DIR_INIT/../llm-judge.py" "$JUDGE_DIR/llm-judge.py"
+  echo "  judge script copied to scripts/judge/llm-judge.py"
+fi
+
 # docs/specs/ — only if not exists (user writes their 1 file there)
 if [ ! -d "$PROJECT/docs/specs" ]; then
   echo "Creating docs/specs/ skeleton..."
@@ -59,8 +68,11 @@ MODELS
   cat > "$PROJECT/docs/specs/acceptance-criteria.md" << 'AC'
 # Acceptance Criteria
 
-> Опишите проверяемые условия для done.
-> Формат: - [ ] условие
+> Опишите проверяемые условия для done (одно условие на строку).
+> Каждый AC будет проверяться судьёй после завершения фазы.
+> Формат: `- [ ] AC-001: <условие>`
+
+- [ ] AC-001: (опишите первый критерий)
 
 AC
 
@@ -99,19 +111,25 @@ You NEVER implement phases yourself. You delegate every phase to a sub-agent.
       ```
       bash scripts/build-loop/run-loop.sh --project . --phase <id> --print-prompt
       ```
-   c. **Delegate implementation to a fresh sub-agent. Do NOT implement yourself.**
-      Use `task()` with the full phase prompt.
-      The sub-agent:
-      - Reads docs/specs/ in a fresh session
-      - Writes all files for this phase only
-      - Returns summary of what was done
-   d. After sub-agent completes:
-      ```
-      git add -A && git commit -m "p<id>: <phase name>"
-      git push
-      bash scripts/build-loop/run-loop.sh --project . --mark-complete <id>
-      ```
-   e. Repeat for next pending phase
+    c. **Delegate implementation to a fresh sub-agent. Do NOT implement yourself.**
+       Use `task()` with the full phase prompt.
+       The sub-agent:
+       - Reads docs/specs/ in a fresh session
+       - Writes all files for this phase only
+       - Saves a summary to `/tmp/p<id>-summary.txt`
+       - Returns summary of what was done
+    d. **Verify with judge** before committing:
+       ```
+       bash scripts/build-loop/run-loop.sh --project . --judge --phase <id> --summary /tmp/p<id>-summary.txt
+       ```
+    e. If judge FAILS: go back to step c (re-delegate to fresh sub-agent with judge feedback)
+    f. If judge PASSES:
+       ```
+       git add -A && git commit -m "p<id>: <phase name>"
+       git push
+       bash scripts/build-loop/run-loop.sh --project . --mark-complete <id>
+       ```
+    g. Repeat for next pending phase
 4. When all phases complete — report summary
 
 ## Constraints

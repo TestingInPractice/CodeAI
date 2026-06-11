@@ -87,9 +87,8 @@ $spec_content
 4. Verify against the acceptance criteria in the spec.
 
 When done:
-1. Save a summary of what was done to a file (e.g. /tmp/phase-summary.txt)
-2. Run the judge: bash $(cd "$(dirname "$0")" && pwd)/run-loop.sh --project "$PROJECT" --judge --phase <phase-id> --summary /tmp/phase-summary.txt
-3. If judge PASSES: bash $(cd "$(dirname "$0")" && pwd)/run-loop.sh --project "$PROJECT" --mark-complete <phase-id>
+1. Save a summary of what was done to /tmp/p<phase-id>-summary.txt
+2. Return control to orchestrator (do NOT run judge or commit)
 PROMPT
 }
 

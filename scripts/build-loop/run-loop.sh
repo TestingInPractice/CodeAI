@@ -38,15 +38,24 @@ if [ ! -f "$PHASES_FILE" ]; then
   exit 1
 fi
 
-find_spec_file() {
+find_spec_files() {
   local dir="$1"
-  for f in "$dir"/*.md "$dir"/*.MD; do
-    if [ -f "$f" ]; then
-      echo "$f"
-      return 0
-    fi
-  done
-  echo ""
+  find "$dir" -type f \( -name "*.md" -o -name "*.MD" \) | sort
+}
+
+read_all_specs() {
+  local dir="$1"
+  local files
+  files=$(find_spec_files "$dir")
+  if [ -z "$files" ]; then
+    echo "Spec files not found in $dir"
+    return
+  fi
+  while IFS= read -r f; do
+    echo "--- $(basename "$f") ---"
+    cat "$f"
+    echo ""
+  done <<< "$files"
 }
 
 read_phase() {
@@ -67,12 +76,7 @@ generate_prompt() {
   local phase_name="$1"
   local spec_content
 
-  spec_content=$(find_spec_file "$SPECS_DIR")
-  if [ -n "$spec_content" ]; then
-    spec_content=$(cat "$spec_content")
-  else
-    spec_content="Spec file not found in $SPECS_DIR"
-  fi
+  spec_content=$(read_all_specs "$SPECS_DIR")
 
   cat << PROMPT
 You are executing phase "$phase_name" of the project.
@@ -139,7 +143,6 @@ for k,v in d.items():
 
     phase_data=$(read_phase "$PHASE_ID")
     phase_name=$(echo "$phase_data" | python3 -c "import json,sys; print(json.load(sys.stdin).get('name','Unknown'))")
-    spec_file=$(find_spec_file "$SPECS_DIR")
 
     echo "╔═══════════════════════════════════════════════╗"
     echo "║  Judge: Phase $PHASE_ID — $phase_name"
@@ -149,7 +152,7 @@ for k,v in d.items():
     if python3 "$JUDGE_SCRIPT" \
       --question "Phase $PHASE_ID: $phase_name" \
       --response "$(cat "$SUMMARY_FILE")" \
-      --context "$(cat "$spec_file")" \
+      --context "$(read_all_specs "$SPECS_DIR")" \
       --phase-id "$PHASE_ID" \
       --phases-path "$PHASES_FILE"; then
       echo ""

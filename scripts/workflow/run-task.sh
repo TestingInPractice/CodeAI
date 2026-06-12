@@ -169,28 +169,36 @@ case "$MODE" in
     echo "║  Judge: Phase $PHASE_ID — $phase_name [$STEP]"
     echo "╚═══════════════════════════════════════════════╝"
 
-    spec_file=""
-    for f in "$SPECS_DIR"/*.md; do [ -f "$f" ] && spec_file="$f" && break; done
+    # Read all spec files for complete context
+    all_specs=""
+    while IFS= read -r f; do
+      all_specs+="--- $(basename "$f") ---"$'\n'
+      all_specs+=$(cat "$f")
+      all_specs+=$'\n\n'
+    done < <(find "$SPECS_DIR" -type f \( -name "*.md" -o -name "*.MD" \) | sort 2>/dev/null)
+    if [ -z "$all_specs" ]; then
+      all_specs="Spec files not found in $SPECS_DIR"
+    fi
 
     if [ "$STEP" = "analyst" ]; then
       python3 "$JUDGE_SCRIPT" \
         --question "Phase $PHASE_ID: $phase_name (analyst: architecture, data models, contracts)" \
         --response "$(cat "$SUMMARY_FILE")" \
-        --context "$(cat "$spec_file")" \
+        --context "$all_specs" \
         --phase-id "$PHASE_ID" \
         --phases-path "$PHASES_FILE" && echo "✅ Analyst judge PASSED" || echo "❌ Analyst judge FAILED"
     elif [ "$STEP" = "dev" ] || [ "$STEP" = "developer" ]; then
       python3 "$JUDGE_SCRIPT" \
         --question "Phase $PHASE_ID: $phase_name (developer: implementation)" \
         --response "$(cat "$SUMMARY_FILE")" \
-        --context "$(cat "$spec_file")" \
+        --context "$all_specs" \
         --phase-id "$PHASE_ID" \
         --phases-path "$PHASES_FILE" && echo "✅ Dev judge PASSED" || echo "❌ Dev judge FAILED"
     elif [ "$STEP" = "tester" ]; then
       python3 "$JUDGE_SCRIPT" \
         --question "Phase $PHASE_ID: $phase_name (tester: test coverage)" \
         --response "$(cat "$SUMMARY_FILE")" \
-        --context "$(cat "$spec_file")" \
+        --context "$all_specs" \
         --phase-id "$PHASE_ID" \
         --phases-path "$PHASES_FILE" && echo "✅ Tester judge PASSED" || echo "❌ Tester judge FAILED"
     else

@@ -232,8 +232,13 @@ with open('$PHASES_FILE', 'w') as f:
     fi
     ;;
   complete)
+    RUN_LOOP="$WORKFLOW_DIR/build-loop/run-loop.sh"
+    if [ ! -f "$RUN_LOOP" ]; then
+      echo "Error: $RUN_LOOP not found" && exit 1
+    fi
     echo "✅ Phase $PHASE_ID \"$phase_name\" — all steps passed"
-    echo "Ready for: git add && git commit && run-loop.sh --mark-complete $PHASE_ID"
+    echo "---"
+    bash "$RUN_LOOP" --project "$PROJECT" --mark-complete "$PHASE_ID"
     ;;
   *)
     usage

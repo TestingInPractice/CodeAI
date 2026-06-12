@@ -37,26 +37,28 @@ with open('$PHASES_FILE') as f:
 phases = data.get('phases', [])
 completed_ids = {p['id'] for p in phases if p.get('status') == 'completed'}
 pending = [p for p in phases if p.get('status') == 'pending']
+in_progress = [p for p in phases if p.get('status') == 'in_progress']
+resumable = [p for p in phases if p.get('status') in ('pending', 'in_progress')]
 
-if not pending:
+if not resumable:
     print('=== All phases completed! 🎉 ===')
     sys.exit(0)
 
-# Find first ready phase (dependencies met)
-ready = None
-for p in pending:
+# Find first ready phase: prefer in_progress (resume), then pending (new)
+def is_ready(p):
     deps = p.get('depends_on', [])
-    missing = [d for d in deps if d not in completed_ids]
-    if not missing:
-        ready = p
-        break
+    return not [d for d in deps if d not in completed_ids]
+
+ready = next((p for p in in_progress if is_ready(p)), None)
+if not ready:
+    ready = next((p for p in pending if is_ready(p)), None)
 
 if not ready:
     print('=== No ready phases — dependencies not met ===')
-    for p in pending:
+    for p in pending + in_progress:
         deps = p.get('depends_on', [])
         missing = [d for d in deps if d not in completed_ids]
-        print(f'  ⏳ Phase {p[\"id\"]}: {p.get(\"name\", \"?\")} — waiting for phases {missing}')
+        print(f'  ⏳ Phase {p[\"id\"]}: {p.get(\"name\", \"?\")} [{p.get(\"status\", \"?\")}] — waiting for phases {missing}')
     sys.exit(1)
 
 pid = ready['id']
@@ -64,15 +66,22 @@ pname = ready.get('name', '?')
 desc = ready.get('description', ready.get('summary', ''))
 ac = ready.get('acceptance_criteria', ready.get('ac', []))
 
+status_label = ready.get('status', 'pending')
+if status_label == 'in_progress':
+    status_label_resume = ' (resume)'
+else:
+    status_label_resume = ''
+
 print('=== Next Phase ===')
 print(f'  ID:     {pid}')
-print(f'  Name:   {pname}')
+print(f'  Name:   {pname}{status_label_resume}')
 if desc:
     print(f'  Desc:   {desc}')
 print()
-print(f'Pending phases:  {len(pending)}')
-print(f'Completed:       {len(completed_ids)}')
-print(f'Total:           {len(phases)}')
+print(f'Pending phases:     {len(pending)}')
+print(f'In progress:        {len(in_progress)}')
+print(f'Completed:          {len(completed_ids)}')
+print(f'Total:              {len(phases)}')
 print()
 print('To get the full prompt for this phase:')
 print(f'  bash scripts/build-loop/run-loop.sh --project \"$PROJECT\" --phase {pid} --print-prompt')

@@ -225,7 +225,7 @@ def main():
 
     if args.scan_docs:
         scan_docs(os.path.join(os.path.dirname(__file__), "..", "scripts", "build-loop", "docs"))
-        return
+        return 0
 
     if args.batch:
         cases = []
@@ -243,11 +243,11 @@ def main():
             json.dump(results, f, indent=2, ensure_ascii=False)
         passed = sum(1 for r in results if r["passed"])
         print(f"Batch done: {passed}/{len(results)} passed -> {out_path}")
-        return
+        return 0 if passed == len(results) else 1
 
     if not args.question or not args.response:
         ap.print_help()
-        sys.exit(1)
+        return 1
 
     # Поддержка чтения из файлов
     for arg in ["question", "response", "context"]:
@@ -258,7 +258,8 @@ def main():
 
     result = evaluate(args.question, args.response, args.context, args.phase_id or "", args.phases_path or "")
     print_result(result)
+    return 0 if result.get("passed") else 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

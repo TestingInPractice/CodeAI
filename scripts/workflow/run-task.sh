@@ -180,27 +180,52 @@ case "$MODE" in
       all_specs="Spec files not found in $SPECS_DIR"
     fi
 
+    run_judge() {
+      local label="$1"
+      if python3 "$JUDGE_SCRIPT" \
+        --question "Phase $PHASE_ID: $phase_name ($label)" \
+        --response "$(cat "$SUMMARY_FILE")" \
+        --context "$all_specs" \
+        --phase-id "$PHASE_ID" \
+        --phases-path "$PHASES_FILE"; then
+        echo "✅ $label judge PASSED"
+        # Only tester's PASS sets judge_passed (final verification gate)
+        if [ "${label,,}" = "tester" ]; then
+          python3 -c "
+import json
+with open('$PHASES_FILE') as f:
+    data = json.load(f)
+for p in data['phases']:
+    if str(p.get('id')) == '$PHASE_ID':
+        p['judge_passed'] = True
+        break
+with open('$PHASES_FILE', 'w') as f:
+    json.dump(data, f, indent=2)
+"
+        fi
+      else
+        echo "❌ $label judge FAILED"
+        # Any failure clears judge_passed
+        python3 -c "
+import json
+with open('$PHASES_FILE') as f:
+    data = json.load(f)
+for p in data['phases']:
+    if str(p.get('id')) == '$PHASE_ID' and 'judge_passed' in p:
+        del p['judge_passed']
+        break
+with open('$PHASES_FILE', 'w') as f:
+    json.dump(data, f, indent=2)
+"
+      fi
+    }
+
     if [ "$STEP" = "analyst" ]; then
-      python3 "$JUDGE_SCRIPT" \
-        --question "Phase $PHASE_ID: $phase_name (analyst: architecture, data models, contracts)" \
-        --response "$(cat "$SUMMARY_FILE")" \
-        --context "$all_specs" \
-        --phase-id "$PHASE_ID" \
-        --phases-path "$PHASES_FILE" && echo "✅ Analyst judge PASSED" || echo "❌ Analyst judge FAILED"
+      run_judge "Analyst"
     elif [ "$STEP" = "dev" ] || [ "$STEP" = "developer" ]; then
-      python3 "$JUDGE_SCRIPT" \
-        --question "Phase $PHASE_ID: $phase_name (developer: implementation)" \
-        --response "$(cat "$SUMMARY_FILE")" \
-        --context "$all_specs" \
-        --phase-id "$PHASE_ID" \
-        --phases-path "$PHASES_FILE" && echo "✅ Dev judge PASSED" || echo "❌ Dev judge FAILED"
+      run_judge "Dev"
     elif [ "$STEP" = "tester" ]; then
-      python3 "$JUDGE_SCRIPT" \
-        --question "Phase $PHASE_ID: $phase_name (tester: test coverage)" \
-        --response "$(cat "$SUMMARY_FILE")" \
-        --context "$all_specs" \
-        --phase-id "$PHASE_ID" \
-        --phases-path "$PHASES_FILE" && echo "✅ Tester judge PASSED" || echo "❌ Tester judge FAILED"
+      run_judge "Tester"
     else
       echo "Error: unknown step '$STEP'"
       exit 1

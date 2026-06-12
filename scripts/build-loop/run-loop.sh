@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 --project <path> [--phase <id>] [--print-prompt] [--mark-complete] [--judge] [--summary <file>]"
+  echo "Usage: $0 --project <path> [--phase <id>] [--print-prompt] [--mark-complete <id>] [--force] [--judge] [--summary <file>]"
   exit 1
 }
 
@@ -10,6 +10,7 @@ PROJECT=""
 PHASE_ID=""
 MODE="status"
 SUMMARY_FILE=""
+FORCE=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -19,6 +20,7 @@ while [[ $# -gt 0 ]]; do
     --mark-complete)   MODE="complete"; PHASE_ID="${2:-}"; shift 2; if [ -z "$PHASE_ID" ]; then echo "Error: --mark-complete requires phase id"; usage; fi ;;
     --judge)           MODE="judge"; shift ;;
     --summary)         SUMMARY_FILE="$2"; shift 2 ;;
+    --force|-f)        FORCE=true; shift ;;
     *) usage ;;
   esac
 done
@@ -157,11 +159,33 @@ for k,v in d.items():
       --phases-path "$PHASES_FILE"; then
       echo ""
       echo "✅ Judge PASSED — phase $PHASE_ID ready for commit"
+      python3 -c "
+import json
+with open('$PHASES_FILE') as f:
+    data = json.load(f)
+for p in data['phases']:
+    if str(p.get('id')) == '$PHASE_ID':
+        p['judge_passed'] = True
+        break
+with open('$PHASES_FILE', 'w') as f:
+    json.dump(data, f, indent=2)
+"
     else
       echo ""
       echo "❌ Judge FAILED — phase $PHASE_ID needs rework"
       echo "   Fix issues and re-run:"
       echo "   bash $0 --project \"$PROJECT\" --judge --phase $PHASE_ID --summary $SUMMARY_FILE"
+      python3 -c "
+import json
+with open('$PHASES_FILE') as f:
+    data = json.load(f)
+for p in data['phases']:
+    if str(p.get('id')) == '$PHASE_ID' and 'judge_passed' in p:
+        del p['judge_passed']
+        break
+with open('$PHASES_FILE', 'w') as f:
+    json.dump(data, f, indent=2)
+"
     fi
     ;;
 
@@ -172,6 +196,20 @@ for k,v in d.items():
       exit 1
     fi
     phase_name=$(echo "$phase_data" | python3 -c "import json,sys; print(json.load(sys.stdin).get('name','Unknown'))")
+
+    if [ "$FORCE" != "true" ]; then
+      judge_ok=$(echo "$phase_data" | python3 -c "import json,sys; d=json.load(sys.stdin); print('true' if d.get('judge_passed') else 'false')")
+      if [ "$judge_ok" != "true" ]; then
+        echo ""
+        echo "❌ Judge has not passed for phase $PHASE_ID."
+        echo "   Run --judge first, or use --force to override."
+        echo ""
+        echo "  bash $0 --project \"$PROJECT\" --judge --phase $PHASE_ID --summary <file>"
+        echo "  bash $0 --project \"$PROJECT\" --mark-complete $PHASE_ID --force"
+        exit 1
+      fi
+    fi
+
     python3 -c "
 import json
 with open('$PHASES_FILE') as f:
@@ -179,6 +217,7 @@ with open('$PHASES_FILE') as f:
 for p in data['phases']:
     if str(p.get('id')) == '$PHASE_ID':
         p['status'] = 'completed'
+        p.pop('judge_passed', None)
         break
 with open('$PHASES_FILE', 'w') as f:
     json.dump(data, f, indent=2)
@@ -204,7 +243,8 @@ else:
         dep_str = f' (depends on: {deps})' if deps else ''
         status = p.get('status', 'pending')
         icon = '✅' if status == 'completed' else '⏳' if status == 'in_progress' else '⬜'
-        print(f'  {icon} Phase {p[\"id\"]}: {p.get(\"name\", \"?\")} [{status}]{dep_str}')
+        jp = ' 🔑' if p.get('judge_passed') else ''
+        print(f'  {icon} Phase {p[\"id\"]}: {p.get(\"name\", \"?\")} [{status}]{jp}{dep_str}')
     print()
     print('Next step:')
     print('  bash scripts/build-loop/next-phase.sh --project \"$PROJECT\"')

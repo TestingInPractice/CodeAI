@@ -48,6 +48,16 @@ if [ ! -f "$JUDGE_DIR/llm-judge.py" ]; then
   echo "  judge script copied to scripts/judge/llm-judge.py"
 fi
 
+# Copy evaluate_judge.py + transition.py + rubrics (Mode C — full pipeline)
+TEMPLATE_DIR="$BUILD_LOOP_DIR_INIT/workflow-template"
+if [ ! -f "$PROJECT/scripts/evaluate_judge.py" ]; then
+  mkdir -p "$PROJECT/scripts/build-loop/workflow-template/judge-rubrics"
+  cp "$TEMPLATE_DIR/scripts/evaluate_judge.py" "$PROJECT/scripts/evaluate_judge.py"
+  cp "$TEMPLATE_DIR/scripts/transition.py" "$PROJECT/scripts/transition.py"
+  cp "$TEMPLATE_DIR/judge-rubrics/"*.json "$PROJECT/scripts/build-loop/workflow-template/judge-rubrics/"
+  echo "  evaluate_judge.py + transition.py + rubrics copied"
+fi
+
 # docs/specs/ — only if not exists (user writes their 1 file there)
 if [ ! -d "$PROJECT/docs/specs" ]; then
   echo "Creating docs/specs/ skeleton..."

@@ -73,6 +73,27 @@ Use this as a knowledge source when working on external projects.
 
 ---
 
+## OODA Subagents (встроенные opencode-агенты)
+
+Проект использует 4 OODA-агента, определённых в `~/.config/opencode/agents/`:
+
+| Агент | Роль | Инструменты | Вывод |
+|-------|------|-------------|-------|
+| `@observe` | Сбор фактов (read-only) | grep, glob, cat | observe-summary.md |
+| `@orient` | Анализ архитектуры (read-only) | cat, grep | architecture.md |
+| `@decide` | Планирование реализации | write (.md) | plan.md |
+| `@act` | Реализация кода | write, edit, bash | код + dev-summary.md |
+
+Внутри build-loop оркестрацию выполняет `run-task.sh --run`.
+Вне build-loop можно вызывать напрямую:
+
+- `@observe "найди все вызовы API в модуле auth"`
+- `@orient "проанализируй архитектуру платежного модуля"`
+- `@decide "составь план рефакторинга"`
+- `@act "реализуй по плану"`
+
+---
+
 # Mode C — Full Pipeline (для новых проектов)
 
 Когда пользователь говорит "сделай проект X" и даёт ссылку на этот репозиторий — следуй этому workflow.
@@ -156,45 +177,48 @@ python3 scripts/transition.py --project . transition
 
 Для каждой pending фазы из `.build-loop/phases.json`:
 
-### Шаг A. Аналитик
+### Шаг A. Аналитик (через OODA)
 ```
-bash scripts/workflow/run-task.sh --project . --phase <id> --step analyst --print-prompt
+bash scripts/workflow/run-task.sh --project . --phase <id> --step analyst --run
 ```
-Скопируй вывод. **Вызови `task()`** с этим промптом — свежий sub-agent.
+Автоматически выполняет:
+1. `@observe` — ищет факты → `.opencode/tasks/phase-<id>/observe-summary.md`
+2. `@orient` — анализирует архитектуру → `.opencode/tasks/phase-<id>/architecture.md`
+3. Judge — проверяет результат
 
-Sub-agent пишет `/tmp/p<id>-analyst-summary.txt` и возвращает управление.
-
-Запусти судью:
-```
-bash scripts/workflow/run-task.sh --project . --phase <id> --step analyst --judge --summary /tmp/p<id>-analyst-summary.txt
-```
-FAIL → `task()` снова с фидбеком.
+FAIL → исправь orient или перезапусти.
 PASS → переход к разработчику.
 
-### Шаг B. Разработчик
-```
-bash scripts/workflow/run-task.sh --project . --phase <id> --step dev --print-prompt
-```
-`task()` → свежий sub-agent → пишет код + `/tmp/p<id>-dev-summary.txt`.
+> Если `--run` недоступен (нет opencode CLI), используй fallback:
+> ```
+> bash scripts/workflow/run-task.sh --project . --phase <id> --step analyst --print-prompt
+> ```
+> Скопируй вывод, вызови `task()`, затем judge.
 
-Судья:
+### Шаг B. Разработчик (через OODA)
 ```
-bash scripts/workflow/run-task.sh --project . --phase <id> --step dev --judge --summary /tmp/p<id>-dev-summary.txt
+bash scripts/workflow/run-task.sh --project . --phase <id> --step dev --run
 ```
-FAIL → `task()` снова.
+Автоматически выполняет:
+1. `@decide` — пишет план → `.opencode/tasks/phase-<id>/plan.md`
+2. Validate plan — проверка структуры
+3. `@act` — реализует по плану
+4. Judge — проверяет реализацию
+
+FAIL → исправь план или перезапусти.
 PASS → переход к тестировщику.
 
-### Шаг C. Тестировщик
+### Шаг C. Тестировщик (через OODA)
 ```
-bash scripts/workflow/run-task.sh --project . --phase <id> --step tester --print-prompt
+bash scripts/workflow/run-task.sh --project . --phase <id> --step tester --run
 ```
-`task()` → свежий sub-agent → пишет тесты + `/tmp/p<id>-tester-summary.txt`.
+Автоматически выполняет:
+1. `@decide` — пишет тест-план → `.opencode/tasks/phase-<id>/test-plan.md`
+2. Validate plan — проверка структуры
+3. `@act` — пишет тесты и запускает их
+4. Judge — проверяет покрытие
 
-Судья:
-```
-bash scripts/workflow/run-task.sh --project . --phase <id> --step tester --judge --summary /tmp/p<id>-tester-summary.txt
-```
-FAIL → `task()` снова.
+FAIL → исправь тест-план или перезапусти.
 PASS → коммит.
 
 ### Финал задачи

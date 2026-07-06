@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 # run-task.sh — Per-task cycle: analyst → judge → dev → judge → tester → judge
 # Usage:
-#   bash scripts/workflow/run-task.sh --project . --phase p1 --step analyst --print-prompt
-#   bash scripts/workflow/run-task.sh --project . --phase p1 --step analyst --judge --summary /tmp/p1-analyst.txt
-#   bash scripts/workflow/run-task.sh --project . --phase p1 --step dev --print-prompt
-#   bash scripts/workflow/run-task.sh --project . --phase p1 --step dev --judge --summary /tmp/p1-dev.txt
-#   bash scripts/workflow/run-task.sh --project . --phase p1 --step tester --print-prompt
+#   bash scripts/workflow/run-task.sh --project . --phase p1 --step analyst --run
+#   bash scripts/workflow/run-task.sh --project . --phase p1 --step dev --run
+#   bash scripts/workflow/run-task.sh --project . --phase p1 --step analyst --print-prompt  [deprecated]
+#   bash scripts/workflow/run-task.sh --project . --phase p1 --step analyst --judge
+#   bash scripts/workflow/run-task.sh --project . --phase p1 --step dev --judge
 #   bash scripts/workflow/run-task.sh --project . --phase p1 --step tester --judge --summary /tmp/p1-tester.txt
 #   bash scripts/workflow/run-task.sh --project . --phase p1 --complete
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 --project <path> --phase <id> --step <analyst|dev|tester> [--print-prompt|--judge --summary <file>]"
+  echo "Usage: $0 --project <path> --phase <id> --step <analyst|dev|tester> [--run|--print-prompt|--judge]"
   echo "       $0 --project <path> --phase <id> --complete"
   exit 1
 }
@@ -29,6 +29,7 @@ while [[ $# -gt 0 ]]; do
     --phase)        PHASE_ID="$2"; shift 2 ;;
     --step)         STEP="$2"; shift 2 ;;
     --print-prompt) MODE="prompt"; shift ;;
+    --run)          MODE="run"; shift ;;
     --judge)        MODE="judge"; shift ;;
     --summary)      SUMMARY_FILE="$2"; shift 2 ;;
     --complete)     MODE="complete"; shift ;;
@@ -134,12 +135,14 @@ $spec_content
 Acceptance criteria for this phase:
 $ac
 
+Read $TASKS_DIR/architecture.md (the architecture analysis).
+
 Your task:
 1. Write unit tests and/or integration tests for the code in this phase
 2. Cover positive cases, edge cases, and error conditions
 3. Verify each acceptance criterion has a corresponding test
 
-When done, save summary to /tmp/p${PHASE_ID}-tester-summary.txt:
+When done, save summary to $TASKS_DIR/tester-summary.md:
 ## Test files created
 - tests/test_foo.py
 
@@ -148,10 +151,270 @@ When done, save summary to /tmp/p${PHASE_ID}-tester-summary.txt:
 PROMPT
 }
 
+# ──────────────────────────────────────────────────
+# Shared judge runner
+# ──────────────────────────────────────────────────
+
+run_judge() {
+  local label="$1"
+  if python3 "$JUDGE_SCRIPT" \
+    --question "Phase $PHASE_ID: $phase_name ($label)" \
+    --response "$(cat "$SUMMARY_FILE")" \
+    --context "$all_specs" \
+    --phase-id "$PHASE_ID" \
+    --phases-path "$PHASES_FILE"; then
+    echo "✅ $label judge PASSED"
+    # Only tester's PASS sets judge_passed (final verification gate)
+    label_lc="$(echo "$label" | tr '[:upper:]' '[:lower:]')"
+    if [ "$label_lc" = "tester" ]; then
+      python3 -c "
+import json
+with open('$PHASES_FILE') as f:
+    data = json.load(f)
+for p in data['phases']:
+    if str(p.get('id')) == '$PHASE_ID':
+        p['judge_passed'] = True
+        break
+with open('$PHASES_FILE', 'w') as f:
+    json.dump(data, f, indent=2)
+"
+    fi
+  else
+    echo "❌ $label judge FAILED"
+    python3 -c "
+import json
+with open('$PHASES_FILE') as f:
+    data = json.load(f)
+for p in data['phases']:
+    if str(p.get('id')) == '$PHASE_ID' and 'judge_passed' in p:
+        del p['judge_passed']
+        break
+with open('$PHASES_FILE', 'w') as f:
+    json.dump(data, f, indent=2)
+"
+  fi
+}
+
+# ──────────────────────────────────────────────────
+# OODA orchestration (--run mode)
+# ──────────────────────────────────────────────────
+
+TASKS_DIR="$PROJECT/.opencode/tasks/phase-$PHASE_ID"
+
+ensure_opencode() {
+  if ! command -v opencode &>/dev/null; then
+    echo "❌ opencode CLI not found. Install it or use --print-prompt fallback."
+    exit 1
+  fi
+}
+
+generate_tester_decide_prompt() {
+  cat << PROMPT
+You are a TEST PLAN designer for phase "$PHASE_ID: $phase_name".
+
+Project spec:
+$spec_content
+
+Acceptance criteria for this phase:
+$ac
+
+Read $TASKS_DIR/architecture.md (the architecture analysis).
+
+Your task:
+1. Design a test plan covering all ACs, edge cases, and error conditions
+2. Use the standard plan template below
+
+Output format — write to $TASKS_DIR/test-plan.md with EXACTLY this structure:
+
+## Files
+- path/file: reason for test
+
+## Changes
+1. file: what test to write, why
+
+## Risks
+- what might be hard to test, how to mitigate
+
+## Tests
+- AC mapping: which test covers which AC
+- test scenarios with inputs and expected outputs
+
+## Rollback
+- how to revert test files
+
+Do NOT write any implementation code.
+Do NOT redesign — test what exists.
+PROMPT
+}
+
+run_tester() {
+  ensure_opencode
+  mkdir -p "$TASKS_DIR"
+  local plan_file="$TASKS_DIR/test-plan.md"
+  local tester_summary="$TASKS_DIR/tester-summary.md"
+
+  echo "📋 [DECIDE] Creating test plan..."
+  opencode run --agent decide --auto --dir "$PROJECT" \
+    "Phase $PHASE_ID: $phase_name
+
+Spec:
+$spec_content
+
+Acceptance criteria:
+$ac
+
+Read $TASKS_DIR/architecture.md.
+Write a test plan to $plan_file.
+Use template: Files, Changes, Risks, Tests, Rollback." > /dev/null 2>&1
+
+  # Validate plan structure
+  if [ -f "$plan_file" ]; then
+    local missing=""
+    for section in "Files" "Changes" "Risks" "Tests" "Rollback"; do
+      if ! grep -q "^## $section" "$plan_file" 2>/dev/null; then
+        missing="$missing $section"
+      fi
+    done
+    if [ -n "$missing" ]; then
+      echo "❌ [VALIDATE] Test plan missing sections:$missing"
+      exit 1
+    fi
+    echo "✅ [VALIDATE] Test plan structure valid"
+  else
+    echo "❌ [VALIDATE] test-plan.md not created"
+    exit 1
+  fi
+
+  echo "🔧 [ACT] Writing tests..."
+  opencode run --agent act --auto --dir "$PROJECT" \
+    "Phase $PHASE_ID: $phase_name
+
+Spec:
+$spec_content
+
+Acceptance criteria:
+$ac
+
+Read $plan_file. Write tests step by step.
+MUST follow plan. Do NOT redesign.
+Install test dependencies if needed (pip install pytest, etc.).
+Run the tests and verify they pass.
+If any test fails — fix the test, not the production code.
+If impossible — STOP.
+When done, write summary to $tester_summary" > "$tester_summary" 2>/dev/null
+
+  echo "⚖️  [JUDGE] Evaluating tester output..."
+  SUMMARY_FILE="$tester_summary"
+  JUDGE_SCRIPT="$PROJECT/scripts/judge/llm-judge.py"
+  all_specs="$(cat "$SPECS_DIR"/*.md 2>/dev/null || echo '')"
+  run_judge "Tester"
+}
+
+run_analyst() {
+  ensure_opencode
+  mkdir -p "$TASKS_DIR"
+  local observe_file="$TASKS_DIR/observe-summary.md"
+  local arch_file="$TASKS_DIR/architecture.md"
+
+  echo "🔍 [OBSERVE] Collecting facts..."
+  opencode run --agent observe --auto --dir "$PROJECT" \
+    "Phase $PHASE_ID: $phase_name
+
+Spec:
+$spec_content
+
+Acceptance criteria:
+$ac
+
+Find all files relevant to this phase. Read them. Record ONLY facts.
+Output your findings. Do NOT write any files." > "$observe_file" 2>/dev/null
+
+  echo "🧭 [ORIENT] Analyzing architecture..."
+  opencode run --agent orient --auto --dir "$PROJECT" \
+    "Phase $PHASE_ID: $phase_name
+
+Spec:
+$spec_content
+
+Acceptance criteria:
+$ac
+
+Read the observe findings above. Analyze the architecture.
+Design decisions, risks, and file list.
+Output your analysis. Do NOT write any files." > "$arch_file" 2>/dev/null
+
+  echo "⚖️  [JUDGE] Evaluating analyst output..."
+  SUMMARY_FILE="$arch_file"
+  JUDGE_SCRIPT="$PROJECT/scripts/judge/llm-judge.py"
+  all_specs="$(cat "$SPECS_DIR"/*.md 2>/dev/null || echo '')"
+  run_judge "Analyst"
+}
+
+run_dev() {
+  ensure_opencode
+  mkdir -p "$TASKS_DIR"
+  local arch_file="$TASKS_DIR/architecture.md"
+  local plan_file="$TASKS_DIR/plan.md"
+  local dev_summary="$TASKS_DIR/dev-summary.md"
+
+  echo "📋 [DECIDE] Creating plan..."
+  opencode run --agent decide --auto --dir "$PROJECT" \
+    "Phase $PHASE_ID: $phase_name
+
+Spec:
+$spec_content
+
+Acceptance criteria:
+$ac
+
+Read $arch_file. Write a step-by-step plan to $plan_file.
+Use template: Files, Changes, Risks, Tests, Rollback." > /dev/null 2>&1
+
+  # Validate plan structure
+  if [ -f "$plan_file" ]; then
+    local missing=""
+    for section in "Files" "Changes" "Risks" "Tests" "Rollback"; do
+      if ! grep -q "^## $section" "$plan_file" 2>/dev/null; then
+        missing="$missing $section"
+      fi
+    done
+    if [ -n "$missing" ]; then
+      echo "❌ [VALIDATE] Plan missing sections:$missing"
+      exit 1
+    fi
+    echo "✅ [VALIDATE] Plan structure valid"
+  else
+    echo "❌ [VALIDATE] plan.md not created"
+    exit 1
+  fi
+
+  echo "🔧 [ACT] Implementing plan..."
+  opencode run --agent act --auto --dir "$PROJECT" \
+    "Phase $PHASE_ID: $phase_name
+
+Spec:
+$spec_content
+
+Acceptance criteria:
+$ac
+
+Read $plan_file. Implement step by step.
+MUST follow plan. Do NOT redesign.
+If impossible — STOP.
+When done, write summary to $dev_summary" > "$dev_summary" 2>/dev/null
+
+  echo "⚖️  [JUDGE] Evaluating developer output..."
+  SUMMARY_FILE="$dev_summary"
+  JUDGE_SCRIPT="$PROJECT/scripts/judge/llm-judge.py"
+  all_specs="$(cat "$SPECS_DIR"/*.md 2>/dev/null || echo '')"
+  run_judge "Dev"
+}
+
 case "$MODE" in
   prompt)
     echo "╔═══════════════════════════════════════════════╗"
-    echo "║  Phase $PHASE_ID — $phase_name [$STEP]"
+    echo "║  Phase $PHASE_ID — $phase_name [$STEP]      ║"
+    echo "║  ⚠️  Deprecated: use --run instead           ║"
     echo "╚═══════════════════════════════════════════════╝"
     case "$STEP" in
       analyst) generate_analyst_prompt ;;
@@ -160,8 +423,27 @@ case "$MODE" in
       *) echo "Error: unknown step '$STEP' (analyst|dev|tester)" && exit 1 ;;
     esac
     ;;
+  run)
+    echo "╔═══════════════════════════════════════════════╗"
+    echo "║  OODA Run: Phase $PHASE_ID — $phase_name [$STEP]"
+    echo "╚═══════════════════════════════════════════════╝"
+    case "$STEP" in
+      analyst) run_analyst ;;
+      dev|developer) run_dev ;;
+      tester) run_tester ;;
+      *) echo "Error: unknown step '$STEP' (analyst|dev|tester)" && exit 1 ;;
+    esac
+    ;;
   judge)
-    [ -z "$SUMMARY_FILE" ] && echo "Error: --judge requires --summary <file>" && exit 1
+    # Default paths for artifacts if --summary not given
+    if [ -z "$SUMMARY_FILE" ]; then
+      TASKS_DIR="$PROJECT/.opencode/tasks/phase-$PHASE_ID"
+      case "$STEP" in
+        analyst) SUMMARY_FILE="$TASKS_DIR/architecture.md" ;;
+        dev|developer) SUMMARY_FILE="$TASKS_DIR/dev-summary.md" ;;
+        tester) SUMMARY_FILE="$TASKS_DIR/tester-summary.md" ;;
+      esac
+    fi
     [ ! -f "$SUMMARY_FILE" ] && echo "Error: summary file not found: $SUMMARY_FILE" && exit 1
     JUDGE_SCRIPT="$PROJECT/scripts/judge/llm-judge.py"
 
@@ -179,46 +461,6 @@ case "$MODE" in
     if [ -z "$all_specs" ]; then
       all_specs="Spec files not found in $SPECS_DIR"
     fi
-
-    run_judge() {
-      local label="$1"
-      if python3 "$JUDGE_SCRIPT" \
-        --question "Phase $PHASE_ID: $phase_name ($label)" \
-        --response "$(cat "$SUMMARY_FILE")" \
-        --context "$all_specs" \
-        --phase-id "$PHASE_ID" \
-        --phases-path "$PHASES_FILE"; then
-        echo "✅ $label judge PASSED"
-        # Only tester's PASS sets judge_passed (final verification gate)
-        if [ "${label,,}" = "tester" ]; then
-          python3 -c "
-import json
-with open('$PHASES_FILE') as f:
-    data = json.load(f)
-for p in data['phases']:
-    if str(p.get('id')) == '$PHASE_ID':
-        p['judge_passed'] = True
-        break
-with open('$PHASES_FILE', 'w') as f:
-    json.dump(data, f, indent=2)
-"
-        fi
-      else
-        echo "❌ $label judge FAILED"
-        # Any failure clears judge_passed
-        python3 -c "
-import json
-with open('$PHASES_FILE') as f:
-    data = json.load(f)
-for p in data['phases']:
-    if str(p.get('id')) == '$PHASE_ID' and 'judge_passed' in p:
-        del p['judge_passed']
-        break
-with open('$PHASES_FILE', 'w') as f:
-    json.dump(data, f, indent=2)
-"
-      fi
-    }
 
     if [ "$STEP" = "analyst" ]; then
       run_judge "Analyst"

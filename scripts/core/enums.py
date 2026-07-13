@@ -72,3 +72,49 @@ class KnowledgeKind(str, Enum):
     TEST = "test"
     API = "api"
     MEMORY = "memory"
+
+
+class WorkflowStatus(str, Enum):
+    """Overall workflow pipeline status."""
+    IDLE = "idle"
+    RUNNING = "running"
+    PAUSED = "paused"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    ROLLING_BACK = "rolling_back"
+
+
+class EventType(str, Enum):
+    """All events in the CodeAI Platform.
+
+    Naming convention: SUBSYSTEM_ACTION
+    """
+    # Spec Engine
+    SPEC_CREATED = "spec.created"
+    SPEC_VALIDATED = "spec.validated"
+    SPEC_APPROVED = "spec.approved"
+
+    # Workflow Engine
+    PHASE_STARTED = "phase.started"
+    PHASE_COMPLETED = "phase.completed"
+    PHASE_FAILED = "phase.failed"
+    PHASE_ROLLBACK = "phase.rollback"
+
+    # Task lifecycle
+    TASK_STARTED = "task.started"
+    TASK_COMPLETED = "task.completed"
+    TASK_FAILED = "task.failed"
+    TASK_INTERRUPTED = "task.interrupted"
+
+    # Judge Engine
+    JUDGE_PASSED = "judge.passed"
+    JUDGE_FAILED = "judge.failed"
+    JUDGE_ROUTED = "judge.routed"
+
+    # Knowledge Layer
+    KNOWLEDGE_REQUESTED = "knowledge.requested"
+    KNOWLEDGE_RETRIEVED = "knowledge.retrieved"
+
+    # Memory Layer
+    MEMORY_STORED = "memory.stored"
+    MEMORY_LOADED = "memory.loaded"

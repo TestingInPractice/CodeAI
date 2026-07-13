@@ -81,3 +81,8 @@ class ConfigurationError(CodeAIError):
 class InfrastructureError(CodeAIError):
     """Infrastructure errors (filesystem, network, process)."""
     pass
+
+
+class RepositoryError(CodeAIError):
+    """Repository errors (load, save, backup, restore failures)."""
+    pass

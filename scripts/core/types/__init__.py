@@ -5,6 +5,7 @@ Re-exports all types for backward-compatible imports:
 """
 
 from scripts.core.enums import (
+    EventType,
     KnowledgeKind,
     KnowledgeType,
     MemoryType,
@@ -13,6 +14,7 @@ from scripts.core.enums import (
     RouteTarget,
     TaskStatus,
     VerdictStatus,
+    WorkflowStatus,
 )
 from scripts.core.types.common import Artifact, Event, RuntimeContext
 from scripts.core.types.judge import (
@@ -30,15 +32,17 @@ from scripts.core.types.spec import (
     AC,
     APIContract,
     DataModel,
+    FieldDefinition,
     Requirement,
     Scope,
     StructuredSpec,
     ValidationResult,
 )
-from scripts.core.types.workflow import Phase, Task, WorkflowState
+from scripts.core.types.workflow import Phase, RollbackEntry, Task, WorkflowSnapshot, WorkflowState
 
 __all__ = [
     # enums
+    "EventType",
     "KnowledgeKind",
     "KnowledgeType",
     "MemoryType",
@@ -47,6 +51,7 @@ __all__ = [
     "RouteTarget",
     "TaskStatus",
     "VerdictStatus",
+    "WorkflowStatus",
     # common
     "Artifact",
     "Event",
@@ -54,6 +59,7 @@ __all__ = [
     # spec
     "Requirement",
     "AC",
+    "FieldDefinition",
     "DataModel",
     "APIContract",
     "Scope",
@@ -63,6 +69,8 @@ __all__ = [
     "Task",
     "Phase",
     "WorkflowState",
+    "RollbackEntry",
+    "WorkflowSnapshot",
     # ooda
     "OODAResult",
     # knowledge

@@ -10,16 +10,21 @@
 Format: `{domain}.{action}` (lowercase, dot-separated)
 
 ```
-spec.created
+spec.generated
+spec.validated
 spec.approved
-phase.started
+workflow.started
+workflow.completed
+workflow.rollback
 task.started
-task.completed
 task.interrupted
-judge.passed
-judge.failed
+task.completed
+knowledge.requested
 knowledge.retrieved
 memory.stored
+memory.loaded
+judge.evaluated
+judge.routed
 ```
 
 ---

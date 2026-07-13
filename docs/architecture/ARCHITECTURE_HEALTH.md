@@ -124,8 +124,6 @@ event_bus.py      ← depends on types
 
 **Verified:** No engine imports another engine. No type imports an engine. No circular dependencies.
 
-**Deduction:** `knowledge_layer.py` imports `enums.KnowledgeType` directly (in addition to `types`). This is a minor leak — it should import through `types`. Low impact.
-
 ---
 
 ## 5. Single Responsibility — 9/10
@@ -256,7 +254,7 @@ Already covered in SOLID section. Key extension points:
 
 ### P0 — Critical (do before first implementation)
 
-1. **Add `frozen=True` to immutable types** — `Requirement`, `AC`, `DataModel`, `APIContract`, `Scope`, `RubricCriterion`, `Rubric`, `Knowledge`, `MemoryEntry`. Keep mutable: `Task`, `Phase`, `WorkflowState`, `RuntimeContext`, `ProjectContext`.
+1. **Add `frozen=True` to immutable types** — `Requirement`, `AC`, `DataModel`, `APIContract`, `Scope`, `RubricCriterion`, `Knowledge`. Keep mutable: `Task`, `Phase`, `WorkflowState`, `RuntimeContext`, `ProjectContext`, `Rubric`, `Verdict`, `Score`, `RouteAction`, `OODAResult`, `MemoryEntry`, `Context`, `StructuredSpec`, `ValidationResult`, `Artifact`, `Event`.
 
 2. **Move `KnowledgeType` import from `knowledge_layer.py` to use `types` barrel** — Minor dependency leak. Change `from scripts.core.enums import KnowledgeType` to import through `types`.
 

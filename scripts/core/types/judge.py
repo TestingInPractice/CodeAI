@@ -7,7 +7,7 @@ from scripts.core.enums import RouteTarget, VerdictStatus
 from scripts.core.serialization import Serializable
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class Verdict(Serializable):
     """Judge verdict."""
     overall: VerdictStatus
@@ -16,7 +16,7 @@ class Verdict(Serializable):
     confidence: float = 0.0
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class Score(Serializable):
     """Individual judge score."""
     value: float
@@ -24,7 +24,7 @@ class Score(Serializable):
     judge: str = ""
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class RouteAction(Serializable):
     """Routing decision from Judge Engine."""
     target: RouteTarget
@@ -33,7 +33,7 @@ class RouteAction(Serializable):
     phase_id: str | None = None
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class RubricCriterion(Serializable):
     """Single rubric criterion."""
     id: str
@@ -44,7 +44,7 @@ class RubricCriterion(Serializable):
     critical: bool = False
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class Rubric(Serializable):
     """Evaluation rubric."""
     name: str

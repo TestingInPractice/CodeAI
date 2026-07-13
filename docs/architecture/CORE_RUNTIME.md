@@ -159,7 +159,7 @@ class KnowledgeLayer:
     def search(query: str, scope: str = "all") -> list[Knowledge]:
         """Поиск по базе знаний (全文, semantic, title)."""
 
-    def retrieve(context_type: str, params: dict) -> Context:
+    def retrieve(context_type: KnowledgeType, params: dict[str, Any]) -> Context:
         """Получить контекст определённого типа (architecture, best_practice, reference)."""
 ```
 
@@ -298,38 +298,146 @@ class EventBus:
 
 ---
 
-## 4. Interfaces Between Subsystems
+## 4. Repository Pattern (Data Access Layer)
+
+**Статус:** Интерфейсы определены. Реализации — по мере необходимости.
+
+### Принцип
+
+- Подсистемы **не работают** с файлами/БД напрямую
+- Все доступ к данным — через **абстрактные репозитории**
+- Реализации можно менять без изменения бизнес-логики
+
+### Интерфейсы
+
+```python
+from abc import ABC, abstractmethod
+from typing import TypeVar, Generic
+
+T = TypeVar("T")
+
+class Repository(ABC, Generic[T]):
+    """Базовый репозиторий."""
+
+    @abstractmethod
+    def load(self) -> T | None:
+        """Загрузить сущность."""
+
+    @abstractmethod
+    def save(self, entity: T) -> None:
+        """Сохранить сущность."""
+
+    @abstractmethod
+    def delete(self) -> None:
+        """Удалить сущность."""
+
+
+class WorkflowRepository(Repository[WorkflowSnapshot]):
+    """Репозиторий workflow состояния."""
+
+    @abstractmethod
+    def backup(self, label: str = "") -> str:
+        """Создать бэкап."""
+
+    @abstractmethod
+    def restore(self, backup_id: str) -> WorkflowSnapshot:
+        """Восстановить из бэкапа."""
+
+    @abstractmethod
+    def list_backups(self) -> list[dict]:
+        """Список бэкапов."""
+
+
+class MemoryRepository(Repository[list[MemoryEntry]]):
+    """Репозиторий памяти."""
+
+    @abstractmethod
+    def query(self, scope: str = "project") -> list[MemoryEntry]:
+        """Запрос записей по scope."""
+
+
+class KnowledgeRepository(Repository[list[Knowledge]]):
+    """Репозиторий знаний."""
+
+    @abstractmethod
+    def search(self, query: str, kind: str | None = None) -> list[Knowledge]:
+        """Поиск по базе знаний."""
+```
+
+### Путь к файлам
+
+```
+scripts/core/repositories/
+├── __init__.py
+├── repository.py          # Базовый Repository[T]
+├── workflow_repository.py # WorkflowRepository
+├── memory_repository.py   # MemoryRepository
+├── knowledge_repository.py# KnowledgeRepository
+├── base.py                # (legacy) WorkflowRepository
+└── json_repo.py           # (legacy) JsonWorkflowRepository
+```
+
+---
+
+## 5. Interfaces Between Subsystems
 
 ### Request/Response Types
 
 ```python
-from dataclasses import dataclass
-from enum import Enum
+from dataclasses import dataclass, field
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+from uuid import UUID
+
+from scripts.core.enums import (
+    KnowledgeKind, KnowledgeType, MemoryType, PhaseStatus,
+    Priority, RouteTarget, TaskStatus, VerdictStatus,
+)
 
 # === Spec Engine ===
 
+@dataclass(frozen=True)
+class Requirement:
+    id: UUID
+    title: str
+    description: str
+    priority: Priority
+    dependencies: list[UUID] = field(default_factory=list)
+
+@dataclass(frozen=True)
+class AC:
+    id: UUID
+    requirement_id: UUID
+    description: str
+    verifiable: bool = True
+
+@dataclass(frozen=True)
+class DataModel:
+    name: str
+    fields: dict[str, str] = field(default_factory=dict)
+    description: str = ""
+
+@dataclass(frozen=True)
+class APIContract:
+    method: str
+    path: str
+    request: dict[str, Any] = field(default_factory=dict)
+    response: dict[str, Any] = field(default_factory=dict)
+    description: str = ""
+
+@dataclass(frozen=True)
+class Scope:
+    included: list[str] = field(default_factory=list)
+    excluded: list[str] = field(default_factory=list)
+
 @dataclass
 class StructuredSpec:
-    requirements: list[Requirement]    # F-XXX
-    acceptance_criteria: list[AC]      # AC-XXX
+    requirements: list[Requirement]
+    acceptance_criteria: list[AC]
     data_models: list[DataModel]
     api_contracts: list[APIContract]
     scope: Scope
-
-@dataclass
-class Requirement:
-    id: str               # F-001
-    title: str
-    description: str
-    priority: str         # must | should | could | nice
-    dependencies: list[str]
-
-@dataclass
-class AC:
-    id: str               # AC-001
-    requirement_id: str   # F-001
-    description: str
-    verifiable: bool
 
 @dataclass
 class ValidationResult:
@@ -340,48 +448,66 @@ class ValidationResult:
 # === Workflow Engine ===
 
 @dataclass
-class Phase:
-    id: str               # plan-release
+class Task:
+    uuid: UUID
     title: str
-    description: str
-    status: str           # pending | in_progress | completed | failed
-    depends_on: list[str]
-    tasks: list[Task]
+    description: str = ""
+    status: TaskStatus = TaskStatus.PENDING
+    assigned_role: str = ""
+    spec_ref: str = ""
+    branch: str | None = None
+    dependencies: list[UUID] = field(default_factory=list)
 
 @dataclass
-class Task:
-    uuid: str
+class Phase:
+    id: str
     title: str
-    description: str
-    status: str           # pending | in_progress | completed | blocked | failed
-    assigned_role: str    # analyst | developer | tester
-    spec_ref: str         # F-001
-    branch: str | None
-    dependencies: list[str]
+    description: str = ""
+    status: PhaseStatus = PhaseStatus.PENDING
+    depends_on: list[str] = field(default_factory=list)
+    tasks: list[Task] = field(default_factory=list)
+    judge_passed: bool = False
+
+@dataclass
+class WorkflowState:
+    current_phase: Phase | None = None
+    phases: list[Phase] = field(default_factory=list)
+    current_task: Task | None = None
+    started_at: datetime | None = None
+    updated_at: datetime | None = None
 
 # === OODA Runtime ===
 
 @dataclass
+class Artifact:
+    name: str
+    path: Path
+    type: str
+    checksum: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+@dataclass
 class OODAResult:
-    task_id: str
-    step: str             # analyst | dev | tester
+    task_id: UUID
+    step: str
     success: bool
-    outputs: dict[str, str]  # {artifact_name: file_path}
-    summary: str
+    outputs: list[Artifact] = field(default_factory=list)
+    summary: str = ""
 
 # === Knowledge Layer ===
 
-@dataclass
+@dataclass(frozen=True)
 class Knowledge:
-    id: str
-    source: str           # file path or URL
+    id: UUID
+    source: str
+    kind: KnowledgeKind
     content: str
-    score: float          # relevance score
-    metadata: dict
+    score: float = 0.0
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 @dataclass
 class Context:
-    context_type: str     # architecture | best_practice | reference
+    context_type: KnowledgeType
     items: list[Knowledge]
     summary: str
 
@@ -389,47 +515,47 @@ class Context:
 
 @dataclass
 class MemoryEntry:
-    id: str
-    type: str             # project_history | judge_history | iterations | etc.
+    id: UUID
+    type: MemoryType
     content: str
-    timestamp: str
-    metadata: dict
+    timestamp: datetime = field(default_factory=datetime.now)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 # === Judge Engine ===
 
 @dataclass
 class Verdict:
-    overall: str          # PASS | PASS_WITH_CONCERNS | FAIL
-    scores: dict[str, float]
-    failures: list[str]
-    confidence: float
+    overall: VerdictStatus
+    scores: dict[str, float] = field(default_factory=dict)
+    failures: list[str] = field(default_factory=list)
+    confidence: float = 0.0
 
 @dataclass
 class Score:
-    value: float          # 0.0 - 1.0
-    breakdown: dict[str, float]
-    judge: str
+    value: float
+    breakdown: dict[str, float] = field(default_factory=dict)
+    judge: str = ""
 
 @dataclass
 class RouteAction:
-    target: str           # ooda | spec | workflow
-    reason: str
-    task_id: str | None
-    phase_id: str | None
+    target: RouteTarget
+    reason: str = ""
+    task_id: UUID | None = None
+    phase_id: str | None = None
 
 @dataclass
 class Rubric:
     name: str
-    criteria: list[RubricCriterion]
+    criteria: list[RubricCriterion] = field(default_factory=list)
 
-@dataclass
+@dataclass(frozen=True)
 class RubricCriterion:
     id: str
     label: str
-    weight: int           # 1-5
-    scale: int            # 1-5
-    pass_threshold: int   # 1-5
-    critical: bool
+    weight: int = 1
+    scale: int = 5
+    pass_threshold: int = 3
+    critical: bool = False
 ```
 
 ### Error Handling
@@ -466,7 +592,7 @@ class JudgeError(CodeAIError):
 
 ---
 
-## 5. Migration Notes
+## 6. Migration Notes
 
 ### Создаётся
 
@@ -475,7 +601,7 @@ class JudgeError(CodeAIError):
 | `docs/architecture/CORE_RUNTIME.md` | Этот документ |
 | `docs/architecture/TECH_STACK.md` | Technology Stack |
 | `scripts/core/__init__.py` | Package init |
-| `scripts/core/types.py` | Все dataclasses и типы |
+| `scripts/core/types/` | Dataclass definitions (package) |
 | `scripts/core/spec_engine.py` | Spec Engine stub |
 | `scripts/core/workflow_engine.py` | Workflow Engine stub |
 | `scripts/core/ooda_runtime.py` | OODA Runtime stub |

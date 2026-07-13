@@ -8,7 +8,7 @@ from scripts.core.enums import KnowledgeKind, KnowledgeType
 from scripts.core.serialization import Serializable
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Knowledge(Serializable):
     """Single knowledge item from Knowledge Layer."""
     id: UUID

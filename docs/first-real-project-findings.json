@@ -1,0 +1,86 @@
+{
+  "working": [
+    {
+      "title": "SpecEngine.generate()",
+      "detail": "Created docs/specs/goals.md (1287 bytes)"
+    },
+    {
+      "title": "SpecEngine.validate()",
+      "detail": "Spec validated successfully"
+    },
+    {
+      "title": "SpecEngine.parse()",
+      "detail": "Parsed 2 requirements, 2 ACs"
+    },
+    {
+      "title": "WorkflowEngine setup",
+      "detail": "2 phases created from spec"
+    },
+    {
+      "title": "WorkflowEngine transitions",
+      "detail": "4 transitions executed"
+    },
+    {
+      "title": "Full pipeline",
+      "detail": "All 2 phases completed"
+    },
+    {
+      "title": "OODA phase 1",
+      "detail": "Completed successfully"
+    },
+    {
+      "title": "OODA phase 2",
+      "detail": "Completed successfully"
+    },
+    {
+      "title": "Knowledge search",
+      "detail": "Found 2 items"
+    },
+    {
+      "title": "Memory load",
+      "detail": "Found 2 entries"
+    },
+    {
+      "title": "Judge system",
+      "detail": "All phases passed"
+    },
+    {
+      "title": "Event Bus",
+      "detail": "10 events published across 6 types"
+    },
+    {
+      "title": "Artifacts",
+      "detail": "4 artifacts declared"
+    }
+  ],
+  "broken": [
+    {
+      "title": "Artifact ooda-summary-08e4f153-0442-4549-a7b3-af1b580f8e1c.md",
+      "detail": "File does not exist at .opencode/tasks/08e4f153-0442-4549-a7b3-af1b580f8e1c/ooda-summary.md"
+    },
+    {
+      "title": "Artifact plan-08e4f153-0442-4549-a7b3-af1b580f8e1c.json",
+      "detail": "File does not exist at .opencode/tasks/08e4f153-0442-4549-a7b3-af1b580f8e1c/plan.json"
+    },
+    {
+      "title": "Artifact ooda-summary-64f85a67-52c5-432e-86bd-18fdbcad4815.md",
+      "detail": "File does not exist at .opencode/tasks/64f85a67-52c5-432e-86bd-18fdbcad4815/ooda-summary.md"
+    },
+    {
+      "title": "Artifact plan-64f85a67-52c5-432e-86bd-18fdbcad4815.json",
+      "detail": "File does not exist at .opencode/tasks/64f85a67-52c5-432e-86bd-18fdbcad4815/plan.json"
+    },
+    {
+      "title": "State persistence",
+      "detail": "state.json does not exist \u2014 pipeline does not persist state"
+    }
+  ],
+  "fake_stub": [
+    {
+      "title": "SpecEngine.approve()",
+      "detail": "No-op auto-approve, no human gate"
+    }
+  ],
+  "observations": [],
+  "problems": []
+}

@@ -188,10 +188,18 @@ class EndToEndPipeline:
         })
 
         # ── Judge evaluate ────────────────────────────────────
+        # Extract acceptance criteria linked to this phase's requirement
+        ac_descriptions: list[str] = []
+        if task_state.spec_ref and result.spec:
+            for ac in result.spec.acceptance_criteria:
+                if str(ac.requirement_id) == task_state.spec_ref:
+                    ac_descriptions.append(ac.description)
+
         verdict = self.judge.evaluate(
             response=ooda_result.summary,
             context=self._build_context(task.title),
             spec=task.title,
+            acceptance_criteria=ac_descriptions,
         )
 
         route = self.judge.route(verdict)

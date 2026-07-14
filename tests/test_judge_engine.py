@@ -230,5 +230,195 @@ class TestRoute(unittest.TestCase):
         self.assertGreater(len(action.reason), 0)
 
 
+# ── evaluate() AC coverage ──────────────────────────────────────
+
+
+class TestACCoverage(unittest.TestCase):
+    """Test that AC coverage actually works when ACs are passed."""
+
+    def test_no_ac_returns_0_5(self):
+        """Without ACs, ac_check score is 0.5 (default)."""
+        engine = make_engine()
+        verdict = engine.evaluate("some response", "context", "spec")
+        self.assertEqual(verdict.scores["ac_check"], 0.5)
+        self.assertIn("no_criteria_provided", verdict.failures)
+
+    def test_empty_ac_list_returns_0_5(self):
+        """Empty AC list behaves same as no ACs."""
+        engine = make_engine()
+        verdict = engine.evaluate("response", "context", "spec", acceptance_criteria=[])
+        self.assertEqual(verdict.scores["ac_check"], 0.5)
+
+    def test_no_ac_coverage_leads_to_fail(self):
+        """When ACs exist but response covers none, ac_check is low → FAIL."""
+        engine = make_engine()
+        verdict = engine.evaluate(
+            response="The system uses quantum computing for blockchain",
+            context="quantum blockchain analysis",
+            spec="quantum blockchain analysis",
+            acceptance_criteria=[
+                "User can register with email",
+                "User receives confirmation email",
+                "User can reset password",
+            ],
+        )
+        # AC score should be low (0.25) because response doesn't cover any ACs
+        self.assertLess(verdict.scores["ac_check"], 0.5)
+        self.assertIn("ac_low_coverage", verdict.failures[0])
+
+    def test_full_ac_coverage_leads_to_high_score(self):
+        """When response covers all ACs, ac_check is 1.0."""
+        engine = make_engine()
+        verdict = engine.evaluate(
+            response=(
+                "The user can register with email and password. "
+                "After registration the user receives a confirmation email. "
+                "The user can reset password via the forgot password flow."
+            ),
+            context="User registration system with email confirmation and password reset",
+            spec="Build user registration system",
+            acceptance_criteria=[
+                "User can register with email",
+                "User receives confirmation email",
+                "User can reset password",
+            ],
+        )
+        self.assertEqual(verdict.scores["ac_check"], 1.0)
+
+    def test_partial_ac_coverage(self):
+        """When response covers some ACs, score is proportional."""
+        engine = make_engine()
+        # Only first AC is covered; other two are about completely different features
+        verdict = engine.evaluate(
+            response=(
+                "The calculator performs arithmetic addition of two numbers"
+            ),
+            context="Calculator arithmetic module with addition support",
+            spec="Build calculator",
+            acceptance_criteria=[
+                "Calculator performs addition correctly",
+                "User can export results to PDF format",
+                "System supports multi-language localization",
+            ],
+        )
+        # "Calculator performs addition correctly" covered (high overlap).
+        # "export results to PDF" NOT covered (no overlap).
+        # "multi-language localization" NOT covered (no overlap).
+        # ratio 1/3 = 0.33 → ac_low_coverage issue
+        ac_issues = [f for f in verdict.failures if "ac_low_coverage" in f]
+        self.assertEqual(len(ac_issues), 1)
+
+    def test_ac_none_treated_as_empty(self):
+        """None acceptance_criteria is same as empty list."""
+        engine = make_engine()
+        verdict = engine.evaluate("response", "context", "spec", acceptance_criteria=None)
+        self.assertEqual(verdict.scores["ac_check"], 0.5)
+
+    def test_ac_check_in_verdict(self):
+        """ac_check always appears in verdict.scores."""
+        engine = make_engine()
+        verdict = engine.evaluate("x", "", "", acceptance_criteria=["ac1"])
+        self.assertIn("ac_check", verdict.scores)
+
+    def test_full_coverage_all_acs_score_1(self):
+        """All ACs covered → ac_check score is exactly 1.0."""
+        engine = make_engine()
+        response = (
+            "User registers with email address. "
+            "Confirmation email is sent. "
+            "Password reset flow works."
+        )
+        verdict = engine.evaluate(
+            response=response,
+            context="registration system",
+            spec="build registration",
+            acceptance_criteria=[
+                "User registers with email",
+                "Confirmation email is sent",
+                "Password reset works",
+            ],
+        )
+        self.assertEqual(verdict.scores["ac_check"], 1.0)
+
+
+# ── Pipeline AC threading ────────────────────────────────────────
+
+
+class TestPipelineACThreading(unittest.TestCase):
+    """Test that Pipeline passes ACs from spec to Judge."""
+
+    def test_pipeline_passes_acs_to_judge(self):
+        """Pipeline extracts ACs linked to requirement and passes to Judge."""
+        from uuid import uuid4
+        from scripts.core.pipeline import EndToEndPipeline
+        from scripts.core.types.spec import Requirement, AC, StructuredSpec
+        from scripts.core.enums import Priority
+
+        pipeline = EndToEndPipeline()
+
+        # Create spec with known ACs
+        req_id = uuid4()
+        ac1_id = uuid4()
+        ac2_id = uuid4()
+        pipeline.spec_engine.parse = lambda path: StructuredSpec(
+            requirements=[
+                Requirement(id=req_id, title="Build login", description="Login system", priority=Priority.MUST),
+            ],
+            acceptance_criteria=[
+                AC(id=ac1_id, requirement_id=req_id, description="User enters credentials"),
+                AC(id=ac2_id, requirement_id=req_id, description="System validates password"),
+            ],
+        )
+
+        # Capture what judge.evaluate receives
+        captured_kwargs = {}
+        original_evaluate = pipeline.judge.evaluate
+
+        def capture_evaluate(**kwargs):
+            captured_kwargs.update(kwargs)
+            return original_evaluate(**kwargs)
+
+        pipeline.judge.evaluate = capture_evaluate
+
+        result = pipeline.run("Build login system")
+
+        # Judge should have received ACs
+        self.assertIn("acceptance_criteria", captured_kwargs)
+        acs = captured_kwargs["acceptance_criteria"]
+        self.assertEqual(len(acs), 2)
+        self.assertIn("User enters credentials", acs)
+        self.assertIn("System validates password", acs)
+
+    def test_pipeline_no_acs_when_spec_has_none(self):
+        """Pipeline passes empty list when spec has no ACs for a requirement."""
+        from uuid import uuid4
+        from scripts.core.pipeline import EndToEndPipeline
+        from scripts.core.types.spec import Requirement, StructuredSpec
+        from scripts.core.enums import Priority
+
+        pipeline = EndToEndPipeline()
+
+        req_id = uuid4()
+        pipeline.spec_engine.parse = lambda path: StructuredSpec(
+            requirements=[
+                Requirement(id=req_id, title="Task", description="Do something", priority=Priority.MUST),
+            ],
+            acceptance_criteria=[],  # No ACs
+        )
+
+        captured = {}
+        original_evaluate = pipeline.judge.evaluate
+
+        def capture(**kwargs):
+            captured.update(kwargs)
+            return original_evaluate(**kwargs)
+
+        pipeline.judge.evaluate = capture
+        pipeline.run("Do something")
+
+        self.assertIn("acceptance_criteria", captured)
+        self.assertEqual(len(captured["acceptance_criteria"]), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

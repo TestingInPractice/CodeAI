@@ -161,6 +161,7 @@ class JudgeEngine:
         response: str,
         context: str = "",
         spec: str = "",
+        acceptance_criteria: list[str] | None = None,
     ) -> Verdict:
         """Full evaluation: AC + relevance + faithfulness + context precision.
 
@@ -168,6 +169,8 @@ class JudgeEngine:
             response: Response to evaluate.
             context: Context for evaluation (knowledge base, docs).
             spec: Spec text (question/prompt that generated the response).
+            acceptance_criteria: List of acceptance criteria descriptions to
+                check coverage against. If None or empty, AC check returns 0.5.
 
         Returns:
             Verdict with overall status, scores, and failures.
@@ -175,7 +178,8 @@ class JudgeEngine:
         if not response:
             raise JudgeError("Cannot evaluate empty response", code="JUDGE_EMPTY_RESPONSE")
 
-        ac_scores = _score_ac(response, [])
+        ac_list = acceptance_criteria if acceptance_criteria else []
+        ac_scores = _score_ac(response, ac_list)
         rel_scores = _score_relevance(spec or "", response)
         faith_scores = _score_faithfulness(response, context)
         ctx_scores = _score_context_precision(context)

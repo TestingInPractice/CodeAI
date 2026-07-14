@@ -25,10 +25,12 @@ from uuid import uuid4
 from scripts.core.enums import (
     KnowledgeKind,
     MemoryType,
+    PhaseStatus,
     TaskStatus,
     VerdictStatus,
     WorkflowStatus,
 )
+from scripts.core.errors import CodeAIError
 from scripts.core.event_bus import EventBus
 from scripts.core.judge_engine import JudgeEngine
 from scripts.core.knowledge_layer import KnowledgeLayer
@@ -60,6 +62,7 @@ class PipelineResult:
     workflow_status: str = ""
     artifacts: list[Artifact] = field(default_factory=list)
     events: list[str] = field(default_factory=list)
+    errors: list[dict] = field(default_factory=list)
 
 
 class EndToEndPipeline:
@@ -157,81 +160,136 @@ class EndToEndPipeline:
         return phases
 
     def _execute_phase(self, phase: PhaseState, result: PipelineResult) -> str:
-        """Execute a single phase through OODA → Judge → Workflow."""
-        # Start phase
-        self.workflow.start(phase.id)
-        self.event_bus.publish("phase.started", {"source": "workflow", "phase_id": phase.id})
+        """Execute a single phase through OODA → Judge → Workflow.
 
-        # Build task from phase
-        task_state = phase.tasks[0]
-        task = Task(
-            uuid=uuid4(),
-            title=task_state.title,
-            description=f"Implement: {task_state.title}",
-            spec_ref=task_state.spec_ref,
-        )
+        Catches all subsystem exceptions, performs rollback on failure,
+        publishes error events, and preserves the error in result.errors.
+        """
+        try:
+            # Start phase
+            self.workflow.start(phase.id)
+            self.event_bus.publish("phase.started", {"source": "workflow", "phase_id": phase.id})
 
-        # Seed knowledge for this phase
-        self._seed_knowledge(task.title)
+            # Build task from phase
+            task_state = phase.tasks[0]
+            task = Task(
+                uuid=uuid4(),
+                title=task_state.title,
+                description=f"Implement: {task_state.title}",
+                spec_ref=task_state.spec_ref,
+            )
 
-        # Seed memory
-        self._seed_memory(task.title)
+            # Seed knowledge for this phase
+            self._seed_knowledge(task.title)
 
-        # ── OODA execute ──────────────────────────────────────
-        ooda_result = self.ooda.execute(task)
-        result.ooda_results.append(ooda_result)
+            # Seed memory
+            self._seed_memory(task.title)
 
-        self.event_bus.publish("task.completed", {
-            "source": "ooda",
-            "task_id": str(task.uuid),
-            "success": ooda_result.success,
-        })
+            # ── OODA execute ──────────────────────────────────────
+            ooda_result = self.ooda.execute(task)
+            result.ooda_results.append(ooda_result)
 
-        # ── Judge evaluate ────────────────────────────────────
-        # Extract acceptance criteria linked to this phase's requirement
-        ac_descriptions: list[str] = []
-        if task_state.spec_ref and result.spec:
-            for ac in result.spec.acceptance_criteria:
-                if str(ac.requirement_id) == task_state.spec_ref:
-                    ac_descriptions.append(ac.description)
+            self.event_bus.publish("task.completed", {
+                "source": "ooda",
+                "task_id": str(task.uuid),
+                "success": ooda_result.success,
+            })
 
-        verdict = self.judge.evaluate(
-            response=ooda_result.summary,
-            context=self._build_context(task.title),
-            spec=task.title,
-            acceptance_criteria=ac_descriptions,
-        )
+            # ── Judge evaluate ────────────────────────────────────
+            # Extract acceptance criteria linked to this phase's requirement
+            ac_descriptions: list[str] = []
+            if task_state.spec_ref and result.spec:
+                for ac in result.spec.acceptance_criteria:
+                    if str(ac.requirement_id) == task_state.spec_ref:
+                        ac_descriptions.append(ac.description)
 
-        route = self.judge.route(verdict)
+            verdict = self.judge.evaluate(
+                response=ooda_result.summary,
+                context=self._build_context(task.title),
+                spec=task.title,
+                acceptance_criteria=ac_descriptions,
+            )
 
-        result.judge_verdicts.append({
-            "phase": phase.id,
-            "overall": verdict.overall.value,
-            "confidence": verdict.confidence,
-            "route": route.target.value,
-        })
+            route = self.judge.route(verdict)
 
-        self.event_bus.publish("judge.evaluated", {
-            "source": "judge",
-            "phase_id": phase.id,
-            "overall": verdict.overall.value,
-        })
+            result.judge_verdicts.append({
+                "phase": phase.id,
+                "overall": verdict.overall.value,
+                "confidence": verdict.confidence,
+                "route": route.target.value,
+            })
 
-        # ── Workflow complete or rollback ─────────────────────
-        judge_passed = verdict.overall in (
-            VerdictStatus.PASS,
-            VerdictStatus.PASS_WITH_CONCERNS,
-        )
+            self.event_bus.publish("judge.evaluated", {
+                "source": "judge",
+                "phase_id": phase.id,
+                "overall": verdict.overall.value,
+            })
 
-        if judge_passed:
-            task_state.status = TaskStatus.COMPLETED
-            self.workflow.complete(phase.id, judge_passed=True)
-            self.event_bus.publish("phase.completed", {"source": "workflow", "phase_id": phase.id})
-            return "completed"
-        else:
-            self.workflow.rollback(phase.id, f"Judge {verdict.overall.value}")
-            self.event_bus.publish("phase.rollback", {"source": "workflow", "phase_id": phase.id})
+            # ── Workflow complete or rollback ─────────────────────
+            judge_passed = verdict.overall in (
+                VerdictStatus.PASS,
+                VerdictStatus.PASS_WITH_CONCERNS,
+            )
+
+            if judge_passed:
+                task_state.status = TaskStatus.COMPLETED
+                self.workflow.complete(phase.id, judge_passed=True)
+                self.event_bus.publish("phase.completed", {"source": "workflow", "phase_id": phase.id})
+                return "completed"
+            else:
+                self.workflow.rollback(phase.id, f"Judge {verdict.overall.value}")
+                self.event_bus.publish("phase.rollback", {"source": "workflow", "phase_id": phase.id})
+                return "failed"
+
+        except CodeAIError as exc:
+            # Subsystem error: rollback + record + event
+            self._handle_phase_error(phase, result, exc)
             return "failed"
+
+        except Exception as exc:
+            # Unexpected error: wrap, rollback + record + event
+            wrapped = CodeAIError(
+                message=str(exc),
+                code="PIPELINE_UNEXPECTED",
+                recoverable=False,
+                cause=exc,
+            )
+            self._handle_phase_error(phase, result, wrapped)
+            return "failed"
+
+    def _handle_phase_error(
+        self, phase: PhaseState, result: PipelineResult, exc: CodeAIError
+    ):
+        """Handle phase failure: rollback (if started), publish event, record error."""
+        # Only rollback if phase was actually started (IN_PROGRESS or FAILED)
+        # If start() itself failed, phase is still PENDING — skip rollback.
+        phase_obj = next(
+            (p for p in self.workflow._state.phases if p.id == phase.id), None
+        )
+        if phase_obj and phase_obj.status in (PhaseStatus.IN_PROGRESS, PhaseStatus.FAILED):
+            try:
+                self.workflow.rollback(phase.id, f"Error: {exc.message}")
+            except Exception:
+                pass  # Rollback failed — nothing more we can do
+
+        # Mark workflow as failed
+        self.workflow._state.workflow_status = WorkflowStatus.FAILED
+
+        # Publish error event
+        self.event_bus.publish("phase.failed", {
+            "source": "pipeline",
+            "phase_id": phase.id,
+            "error": exc.message,
+            "code": exc.code,
+        })
+
+        # Record error
+        result.errors.append({
+            "phase": phase.id,
+            "error": exc.message,
+            "code": exc.code,
+            "recoverable": exc.recoverable,
+        })
 
     def _seed_knowledge(self, task_title: str):
         """Seed knowledge relevant to the task."""

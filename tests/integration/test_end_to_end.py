@@ -328,5 +328,203 @@ class TestSpecEngine(unittest.TestCase):
             engine.generate("")
 
 
+class TestPhaseErrorHandling(unittest.TestCase):
+    """Test Pipeline error handling in _execute_phase."""
+
+    def _make_pipeline(self):
+        """Create a fresh pipeline for testing."""
+        from scripts.core.pipeline import EndToEndPipeline
+        return EndToEndPipeline()
+
+    def test_ooda_exception_causes_rollback(self):
+        """Exception inside OODA execution → rollback + error recorded."""
+        pipeline = self._make_pipeline()
+        from unittest.mock import MagicMock
+        from scripts.core.errors import OODAError
+
+        pipeline.ooda.execute = MagicMock(side_effect=OODAError(
+            "OODA crashed", code="OODA_FAIL"
+        ))
+
+        result = pipeline.run("Build a system")
+
+        # Phase should be in failed list
+        self.assertEqual(len(result.phases_failed), 1)
+        self.assertEqual(len(result.phases_completed), 0)
+
+        # Error should be recorded
+        self.assertEqual(len(result.errors), 1)
+        self.assertEqual(result.errors[0]["code"], "OODA_FAIL")
+        self.assertIn("OODA crashed", result.errors[0]["error"])
+
+        # phase.failed event should be published
+        self.assertIn("phase.failed", result.events)
+
+    def test_judge_exception_causes_rollback(self):
+        """Exception inside Judge evaluation → rollback + error recorded."""
+        pipeline = self._make_pipeline()
+        from unittest.mock import MagicMock
+        from scripts.core.errors import JudgeError
+
+        pipeline.judge.evaluate = MagicMock(side_effect=JudgeError(
+            "Judge crashed", code="JUDGE_FAIL"
+        ))
+
+        result = pipeline.run("Build a system")
+
+        self.assertEqual(len(result.phases_failed), 1)
+        self.assertEqual(len(result.errors), 1)
+        self.assertEqual(result.errors[0]["code"], "JUDGE_FAIL")
+        self.assertIn("phase.failed", result.events)
+
+    def test_workflow_start_exception_causes_failure(self):
+        """Exception inside Workflow.start → error recorded, no crash."""
+        from unittest.mock import MagicMock, patch
+        from scripts.core.errors import WorkflowError
+        from scripts.core.workflow.state import PhaseState, TaskState
+
+        # Create a mock phase for next() to return
+        phase = PhaseState(id="phase-1", title="Test")
+        phase.tasks.append(TaskState(uuid="t1", title="T1"))
+
+        class FakeWorkflowEngine:
+            """Fake that stores the state from __init__ and raises on start."""
+            def __init__(self, state):
+                self._state = state
+                self._mock = MagicMock()
+                self._mock.next.return_value = phase
+                self._mock.start.side_effect = WorkflowError(
+                    "Workflow start failed", code="WF_START_FAIL"
+                )
+
+            def __getattr__(self, name):
+                return getattr(self._mock, name)
+
+        with patch("scripts.core.pipeline.WorkflowEngine", FakeWorkflowEngine):
+            pipeline = self._make_pipeline()
+            result = pipeline.run("Build a system")
+
+        self.assertEqual(len(result.errors), 1)
+        self.assertEqual(result.errors[0]["code"], "WF_START_FAIL")
+        self.assertEqual(result.workflow_status, "failed")
+
+    def test_workflow_complete_exception_causes_failure(self):
+        """Exception inside Workflow.complete → error recorded."""
+        from unittest.mock import MagicMock, patch
+        from scripts.core.errors import WorkflowError
+        from scripts.core.workflow.state import PhaseState, TaskState
+
+        # Create a mock phase for next() to return
+        phase = PhaseState(id="phase-1", title="Test")
+        phase.tasks.append(TaskState(uuid="t1", title="T1"))
+
+        class FakeWorkflowEngine:
+            """Fake that stores state and raises on complete."""
+            def __init__(self, state):
+                self._state = state
+                self._mock = MagicMock()
+                self._mock.next.return_value = phase
+                self._mock.complete.side_effect = WorkflowError(
+                    "Complete failed", code="WF_COMPLETE_FAIL"
+                )
+
+            def __getattr__(self, name):
+                return getattr(self._mock, name)
+
+        with patch("scripts.core.pipeline.WorkflowEngine", FakeWorkflowEngine):
+            pipeline = self._make_pipeline()
+            result = pipeline.run("Build a system")
+
+        self.assertEqual(len(result.errors), 1)
+        self.assertEqual(result.errors[0]["code"], "WF_COMPLETE_FAIL")
+
+    def test_pipeline_returns_result_on_exception(self):
+        """Pipeline always returns PipelineResult, never raises."""
+        pipeline = self._make_pipeline()
+        from unittest.mock import MagicMock
+        from scripts.core.errors import OODAError
+
+        pipeline.ooda.execute = MagicMock(side_effect=OODAError(
+            "crash", code="X", recoverable=False
+        ))
+
+        # Should NOT raise
+        result = pipeline.run("test")
+        self.assertIsNotNone(result)
+        self.assertEqual(result.workflow_status, "failed")
+
+    def test_error_preserves_cause(self):
+        """Error dict contains recoverable flag from original exception."""
+        pipeline = self._make_pipeline()
+        from unittest.mock import MagicMock
+        from scripts.core.errors import OODAError
+
+        pipeline.ooda.execute = MagicMock(side_effect=OODAError(
+            "timeout", code="TIMEOUT", recoverable=True
+        ))
+
+        result = pipeline.run("test")
+        self.assertTrue(result.errors[0]["recoverable"])
+
+    def test_phase_failed_event_contains_error_info(self):
+        """phase.failed event includes error message and code."""
+        pipeline = self._make_pipeline()
+        from unittest.mock import MagicMock
+        from scripts.core.errors import OODAError
+
+        pipeline.ooda.execute = MagicMock(side_effect=OODAError(
+            "bad state", code="BAD_STATE"
+        ))
+
+        pipeline.run("test")
+
+        # Find the phase.failed event
+        failed_events = [
+            e for e in pipeline._events if e == "phase.failed"
+        ]
+        self.assertEqual(len(failed_events), 1)
+
+    def test_successful_phase_no_errors(self):
+        """Successful phase produces no errors."""
+        pipeline = self._make_pipeline()
+        result = pipeline.run("Build a calculator")
+        self.assertEqual(len(result.errors), 0)
+        self.assertGreater(len(result.phases_completed), 0)
+
+    def test_multiple_phases_partial_failure(self):
+        """First phase fails, second never starts (dependency blocked)."""
+        pipeline = self._make_pipeline()
+        from unittest.mock import MagicMock
+        from scripts.core.errors import OODAError
+        from uuid import uuid4
+        from scripts.core.types.spec import Requirement, AC, StructuredSpec
+        from scripts.core.enums import Priority
+
+        r1 = uuid4()
+        r2 = uuid4()
+        pipeline.spec_engine.parse = lambda path: StructuredSpec(
+            requirements=[
+                Requirement(id=r1, title="Phase 1", description="First", priority=Priority.MUST),
+                Requirement(id=r2, title="Phase 2", description="Second", priority=Priority.MUST),
+            ],
+            acceptance_criteria=[
+                AC(id=uuid4(), requirement_id=r1, description="Phase 1 works"),
+                AC(id=uuid4(), requirement_id=r2, description="Phase 2 works"),
+            ],
+        )
+
+        pipeline.ooda.execute = MagicMock(side_effect=OODAError(
+            "First OODA fails", code="OODA_1"
+        ))
+
+        result = pipeline.run("Multi-phase build")
+
+        # Phase 1 failed, phase 2 never started (dependency blocked by phase 1 failure)
+        self.assertEqual(len(result.phases_failed), 1)
+        self.assertEqual(len(result.phases_completed), 0)
+        self.assertEqual(len(result.errors), 1)
+        self.assertEqual(result.errors[0]["code"], "OODA_1")
+
+
 if __name__ == "__main__":
     unittest.main()

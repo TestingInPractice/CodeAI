@@ -244,10 +244,11 @@ class TestKnowledgeRetrieval(unittest.TestCase):
     def test_knowledge_seeded_and_retrieved(self):
         """Knowledge is seeded and retrieved during OODA."""
         pipeline = EndToEndPipeline()
-        result = pipeline.run("Test knowledge retrieval")
+        prompt = "Test knowledge retrieval"
+        result = pipeline.run(prompt)
 
-        # Knowledge should have been indexed
-        search_results = pipeline.knowledge.search("Implement requested feature")
+        # Knowledge should have been indexed (seeded with task titles from spec)
+        search_results = pipeline.knowledge.search("knowledge")
         self.assertGreater(len(search_results), 0)
 
     def test_knowledge_in_ooda_context(self):

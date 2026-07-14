@@ -257,5 +257,78 @@ class TestEdgeCases(unittest.TestCase):
         handler.assert_called_once()
 
 
+class TestDataImmutability(unittest.TestCase):
+    """P0-004 regression: EventBus must never mutate caller data."""
+
+    def setUp(self):
+        self.bus = EventBus()
+
+    def test_publish_does_not_mutate_input_dict(self):
+        data = {"source": "test", "key": "value"}
+        snapshot = dict(data)
+        self.bus.publish("task.started", data)
+        self.assertEqual(data, snapshot)
+
+    def test_publish_preserves_source_in_input(self):
+        data = {"source": "pipeline"}
+        self.bus.publish("task.started", data)
+        self.assertEqual(data["source"], "pipeline")
+
+    def test_publish_does_not_leak_source_key(self):
+        data = {"source": "pipeline", "other": 42}
+        self.bus.publish("task.started", data)
+        self.assertIn("source", data)
+        self.assertEqual(data["other"], 42)
+
+    def test_publish_handler_mutation_does_not_affect_caller(self):
+        mutating_handler = MagicMock(side_effect=lambda e: e.data.update({"mutated": True}))
+        self.bus.subscribe("task.started", mutating_handler)
+        data = {"source": "test", "key": "value"}
+        self.bus.publish("task.started", data)
+        self.assertNotIn("mutated", data)
+        self.assertEqual(data["key"], "value")
+
+    def test_publish_raw_does_not_mutate_event(self):
+        original_data = {"source": "test", "key": "value"}
+        evt = Event(name="task.started", source="test", data=dict(original_data))
+        handler = MagicMock(side_effect=lambda e: e.data.update({"mutated": True}))
+        self.bus.subscribe("task.started", handler)
+        self.bus.publish_raw(evt)
+        self.assertNotIn("mutated", evt.data)
+        self.assertEqual(evt.data, original_data)
+
+    def test_publish_wildcard_handler_mutation_does_not_affect_caller(self):
+        handler = MagicMock(side_effect=lambda e: e.data.update({"poison": True}))
+        self.bus.subscribe("task.*", handler)
+        data = {"source": "test"}
+        self.bus.publish("task.started", data)
+        self.assertNotIn("poison", data)
+
+    def test_publish_dedup_handler_mutation_does_not_affect_caller(self):
+        handler = MagicMock(side_effect=lambda e: e.data.update({"x": 99}))
+        self.bus.subscribe("task.started", handler)
+        self.bus.subscribe("task.*", handler)
+        data = {"source": "test", "x": 1}
+        self.bus.publish("task.started", data)
+        self.assertEqual(data["x"], 1)
+
+    def test_publish_raw_wildcard_handler_mutation_does_not_affect_event(self):
+        evt = Event(name="task.started", source="test", data={"x": 1})
+        handler = MagicMock(side_effect=lambda e: e.data.update({"x": 99}))
+        self.bus.subscribe("task.*", handler)
+        self.bus.publish_raw(evt)
+        self.assertEqual(evt.data["x"], 1)
+
+    def test_multiple_publishes_independent(self):
+        handler = MagicMock(side_effect=lambda e: e.data.update({"injected": True}))
+        self.bus.subscribe("task.started", handler)
+        data1 = {"source": "a", "v": 1}
+        data2 = {"source": "b", "v": 2}
+        self.bus.publish("task.started", data1)
+        self.bus.publish("task.started", data2)
+        self.assertEqual(data1, {"source": "a", "v": 1})
+        self.assertEqual(data2, {"source": "b", "v": 2})
+
+
 if __name__ == "__main__":
     unittest.main()

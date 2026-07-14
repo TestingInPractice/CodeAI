@@ -61,13 +61,14 @@ class EventBus:
 
         Args:
             event: EventType enum or event name string.
-            data: Event payload dict.
+            data: Event payload dict (never mutated).
         """
         name = event.value if isinstance(event, EventType) else event
+        safe_data = dict(data)
         evt = Event(
             name=name,
-            source=data.pop("source", "unknown"),
-            data=data,
+            source=safe_data.pop("source", "unknown"),
+            data=safe_data,
             timestamp=datetime.now(),
         )
         self._dispatch(evt)
@@ -76,9 +77,17 @@ class EventBus:
         """Publish a pre-built Event (for replay/logging).
 
         Args:
-            event: Pre-built Event envelope.
+            event: Pre-built Event envelope (never mutated).
         """
-        self._dispatch(event)
+        safe_event = Event(
+            name=event.name,
+            source=event.source,
+            event_id=event.event_id,
+            correlation_id=event.correlation_id,
+            data=dict(event.data),
+            timestamp=event.timestamp,
+        )
+        self._dispatch(safe_event)
 
     def _dispatch(self, event: Event) -> None:
         """Dispatch event to matching handlers."""

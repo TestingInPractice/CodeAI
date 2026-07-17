@@ -32,7 +32,7 @@ class TestJudgeWorkflow(unittest.TestCase):
     def test_judge_pass_completes_phase(self):
         """Judge PASS allows phase completion."""
         judge = JudgeEngine()
-        t = TaskState(uuid=str(uuid4()), title="task")
+        t = TaskState(uuid=uuid4(), title="task")
         state = WorkflowState(phases=[PhaseState(id="p1", title="Phase 1", tasks=[t])])
         workflow = WorkflowEngine(state)
 
@@ -52,7 +52,7 @@ class TestJudgeWorkflow(unittest.TestCase):
     def test_judge_fail_prevents_completion(self):
         """Judge FAIL prevents phase completion."""
         judge = JudgeEngine()
-        t = TaskState(uuid=str(uuid4()), title="task")
+        t = TaskState(uuid=uuid4(), title="task")
         state = WorkflowState(phases=[PhaseState(id="p1", title="Phase 1", tasks=[t])])
         workflow = WorkflowEngine(state)
 
@@ -152,7 +152,7 @@ class TestJudgeWorkflow(unittest.TestCase):
     def test_workflow_judge_feedback_loop(self):
         """Judge evaluation feeds back into workflow decisions."""
         judge = JudgeEngine()
-        t = TaskState(uuid=str(uuid4()), title="task")
+        t = TaskState(uuid=uuid4(), title="task")
         state = WorkflowState(phases=[PhaseState(id="p1", title="Phase 1", tasks=[t])])
         workflow = WorkflowEngine(state)
 

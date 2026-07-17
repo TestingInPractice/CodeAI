@@ -66,7 +66,7 @@ class TestFullPipeline(unittest.TestCase):
         memory.store(m)
 
         # Setup workflow
-        task_state = TaskState(uuid=str(uuid4()), title="Implement OODA")
+        task_state = TaskState(uuid=uuid4(), title="Implement OODA")
         phase = PhaseState(id="p1", title="Implement OODA Runtime", tasks=[task_state])
         state = WorkflowState(phases=[phase])
         workflow = WorkflowEngine(state)
@@ -113,9 +113,9 @@ class TestFullPipeline(unittest.TestCase):
         judge = JudgeEngine()
 
         # Setup 3-phase workflow
-        t1 = TaskState(uuid=str(uuid4()), title="Phase 1 task")
-        t2 = TaskState(uuid=str(uuid4()), title="Phase 2 task")
-        t3 = TaskState(uuid=str(uuid4()), title="Phase 3 task")
+        t1 = TaskState(uuid=uuid4(), title="Phase 1 task")
+        t2 = TaskState(uuid=uuid4(), title="Phase 2 task")
+        t3 = TaskState(uuid=uuid4(), title="Phase 3 task")
         p1 = PhaseState(id="p1", title="Phase 1", tasks=[t1])
         p2 = PhaseState(id="p2", title="Phase 2", tasks=[t2], depends_on=["p1"])
         p3 = PhaseState(id="p3", title="Phase 3", tasks=[t3], depends_on=["p2"])

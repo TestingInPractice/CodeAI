@@ -29,7 +29,7 @@ def _make_workflow(phases_def: list[dict]) -> tuple[WorkflowEngine, WorkflowStat
     phases = []
     for p in phases_def:
         tasks = [
-            TaskState(uuid=str(uuid4()), title=t["title"])
+            TaskState(uuid=uuid4(), title=t["title"])
             for t in p.get("tasks", [{"title": f"{p['id']} task"}])
         ]
         phases.append(PhaseState(

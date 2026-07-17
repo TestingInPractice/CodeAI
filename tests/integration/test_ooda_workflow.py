@@ -46,7 +46,7 @@ class TestOODAWorkflow(unittest.TestCase):
         ooda = OODARuntime(knowledge, memory)
 
         # Setup workflow with task
-        task_state = TaskState(uuid=str(uuid4()), title="Build API endpoint")
+        task_state = TaskState(uuid=uuid4(), title="Build API endpoint")
         phase = PhaseState(id="p1", title="API Phase", tasks=[task_state])
         state = WorkflowState(phases=[phase])
         workflow = WorkflowEngine(state)
@@ -158,8 +158,8 @@ class TestOODAWorkflow(unittest.TestCase):
         ooda = OODARuntime(knowledge, memory)
 
         # Two phases with tasks
-        t1 = TaskState(uuid=str(uuid4()), title="Task 1")
-        t2 = TaskState(uuid=str(uuid4()), title="Task 2")
+        t1 = TaskState(uuid=uuid4(), title="Task 1")
+        t2 = TaskState(uuid=uuid4(), title="Task 2")
         p1 = PhaseState(id="p1", title="Phase 1", tasks=[t1])
         p2 = PhaseState(id="p2", title="Phase 2", tasks=[t2], depends_on=["p1"])
         state = WorkflowState(phases=[p1, p2])

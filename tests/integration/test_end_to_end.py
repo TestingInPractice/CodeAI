@@ -6,7 +6,7 @@ Tests the complete pipeline connecting all 6 subsystems + Event Bus.
 import sys
 import unittest
 from pathlib import Path
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -385,7 +385,7 @@ class TestPhaseErrorHandling(unittest.TestCase):
 
         # Create a mock phase for next() to return
         phase = PhaseState(id="phase-1", title="Test")
-        phase.tasks.append(TaskState(uuid="t1", title="T1"))
+        phase.tasks.append(TaskState(uuid=UUID("00000000-0000-0000-0000-000000000001"), title="T1"))
 
         class FakeWorkflowEngine:
             """Fake that stores the state from __init__ and raises on start."""
@@ -416,7 +416,7 @@ class TestPhaseErrorHandling(unittest.TestCase):
 
         # Create a mock phase for next() to return
         phase = PhaseState(id="phase-1", title="Test")
-        phase.tasks.append(TaskState(uuid="t1", title="T1"))
+        phase.tasks.append(TaskState(uuid=UUID("00000000-0000-0000-0000-000000000001"), title="T1"))
 
         class FakeWorkflowEngine:
             """Fake that stores state and raises on complete."""
@@ -496,7 +496,6 @@ class TestPhaseErrorHandling(unittest.TestCase):
         pipeline = self._make_pipeline()
         from unittest.mock import MagicMock
         from scripts.core.errors import OODAError
-        from uuid import uuid4
         from scripts.core.types.spec import Requirement, AC, StructuredSpec
         from scripts.core.enums import Priority
 

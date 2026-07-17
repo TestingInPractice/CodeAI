@@ -147,7 +147,7 @@ class EndToEndPipeline:
         for i, req in enumerate(spec.requirements):
             phase_id = f"phase-{i+1}"
             task = TaskState(
-                uuid=str(uuid4()),
+                uuid=uuid4(),
                 title=req.title,
                 spec_ref=str(req.id),
             )

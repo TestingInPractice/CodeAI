@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
 from scripts.core.enums import PhaseStatus, TaskStatus, VerdictStatus, WorkflowStatus
 from scripts.core.serialization import Serializable
@@ -17,13 +18,13 @@ from scripts.core.serialization import Serializable
 @dataclass
 class TaskState(Serializable):
     """State of a single task."""
-    uuid: str
+    uuid: UUID
     title: str
     status: TaskStatus = TaskStatus.PENDING
     assigned_role: str = ""
     spec_ref: str = ""
     branch: str | None = None
-    dependencies: list[str] = field(default_factory=list)
+    dependencies: list[UUID] = field(default_factory=list)
 
 
 @dataclass

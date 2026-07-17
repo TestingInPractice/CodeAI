@@ -52,7 +52,7 @@ class Phase(Serializable):
     judge_passed: bool = False
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class RollbackEntry(Serializable):
     """Snapshot of a rolled-back phase state.
 

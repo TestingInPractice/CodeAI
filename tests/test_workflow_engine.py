@@ -8,6 +8,7 @@ Tests use ONLY public API from CORE_RUNTIME.md:
 """
 
 import unittest
+from uuid import UUID
 
 from scripts.core.enums import PhaseStatus, TaskStatus
 from scripts.core.errors import WorkflowError
@@ -19,7 +20,7 @@ def make_phase(phase_id: str, tasks: int = 0, deps: list[str] | None = None) -> 
     """Create a PhaseState with optional tasks and dependencies."""
     phase = PhaseState(id=phase_id, title=f"Phase {phase_id}", depends_on=deps or [])
     for i in range(tasks):
-        phase.tasks.append(TaskState(uuid=f"{phase_id}-T{i+1}", title=f"{phase_id}-T{i+1}"))
+        phase.tasks.append(TaskState(uuid=UUID(f"00000000-0000-0000-0000-{i+1:012d}"), title=f"{phase_id}-T{i+1}"))
     return phase
 
 

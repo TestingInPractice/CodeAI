@@ -95,7 +95,7 @@ class TestFailureRecovery(unittest.TestCase):
 
     def test_workflow_rollback_on_judge_fail(self):
         """Workflow rolls back when judge fails."""
-        t = TaskState(uuid=str(uuid4()), title="task")
+        t = TaskState(uuid=uuid4(), title="task")
         state = WorkflowState(phases=[PhaseState(id="p1", title="Phase 1", tasks=[t])])
         workflow = WorkflowEngine(state)
 
@@ -111,7 +111,7 @@ class TestFailureRecovery(unittest.TestCase):
 
     def test_resume_after_rollback(self):
         """Resume workflow after rollback."""
-        t = TaskState(uuid=str(uuid4()), title="task")
+        t = TaskState(uuid=uuid4(), title="task")
         state = WorkflowState(phases=[PhaseState(id="p1", title="Phase 1", tasks=[t])])
         workflow = WorkflowEngine(state)
 
@@ -163,7 +163,7 @@ class TestFailureRecovery(unittest.TestCase):
 
     def test_multiple_rollbacks(self):
         """Multiple rollbacks accumulate in stack."""
-        t = TaskState(uuid=str(uuid4()), title="task")
+        t = TaskState(uuid=uuid4(), title="task")
         state = WorkflowState(phases=[PhaseState(id="p1", title="Phase 1", tasks=[t])])
         workflow = WorkflowEngine(state)
 

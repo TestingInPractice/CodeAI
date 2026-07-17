@@ -786,10 +786,14 @@ class SpecEngine:
     def approve(self, goals_path: Path) -> None:
         """Human gate: approve spec.
 
-        v1: Auto-approves (no human gate in prototype).
+        Writes ``- **Approved**: true`` into the ``## Meta`` section of
+        goals.md so downstream phases can gate on this field.
 
         Args:
             goals_path: Path to goals.md.
+
+        Raises:
+            SpecError: If path is None or file does not exist.
         """
         if goals_path is None:
             raise SpecError(
@@ -797,6 +801,32 @@ class SpecEngine:
                 code="SPEC_NULL_PATH",
                 recoverable=False,
             )
+
+        if not goals_path.exists():
+            raise SpecError(
+                f"Cannot approve non-existent spec: {goals_path}",
+                code="SPEC_NOT_FOUND",
+                recoverable=False,
+            )
+
+        content = goals_path.read_text(encoding="utf-8")
+
+        # Inject Approved line after - **Status**: ... in ## Meta
+        if "- **Approved**:" in content:
+            content = re.sub(
+                r"(\- \*\*Approved\*\*:)\s*\w+",
+                r"\1 true",
+                content,
+            )
+        else:
+            content = re.sub(
+                r"(\- \*\*Status\*\*:.*\n)",
+                r"\1- **Approved**: true\n",
+                content,
+                count=1,
+            )
+
+        goals_path.write_text(content, encoding="utf-8")
 
     def parse(self, goals_path: Path) -> StructuredSpec:
         """Parse goals.md into StructuredSpec.

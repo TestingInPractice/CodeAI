@@ -68,16 +68,16 @@ graph TB
 
 ```python
 class SpecEngine:
-    def generate(prompt: str) -> str:
+    def generate(prompt: str) -> Path:
         """Сгенерировать goals.md из промта пользователя."""
 
-    def validate(goals_path: str) -> ValidationResult:
+    def validate(goals_path: Path) -> ValidationResult:
         """Валидировать структуру goals.md (F-XXX, AC-XXX, Data Models, API Contracts)."""
 
-    def approve(goals_path: str) -> None:
-        """Human gate: постановить spec на согласование."""
+    def approve(goals_path: Path) -> None:
+        """Human gate: записатьApproved: true в goals.md."""
 
-    def parse(goals_path: str) -> StructuredSpec:
+    def parse(goals_path: Path) -> StructuredSpec:
         """Парсить goals.md в структурированный spec (F-XXX → requirements, AC-XXX → criteria)."""
 ```
 
@@ -131,10 +131,10 @@ class OODARuntime:
     def execute(task: Task) -> OODAResult:
         """Запустить OODA cycle для задачи."""
 
-    def resume(task_id: str) -> OODAResult:
+    def resume(task_id: UUID) -> OODAResult:
         """Возобновить прерванную задачу."""
 
-    def interrupt(task_id: str) -> None:
+    def interrupt(task_id: UUID) -> None:
         """Прервать выполняющуюся задачу."""
 ```
 

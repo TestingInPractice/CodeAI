@@ -141,14 +141,15 @@
 
 | Method | Signature | Returns | Raises | Events |
 |--------|-----------|---------|--------|--------|
-| `evaluate` | `(response: str, context: str, spec: str) -> Verdict` | `Verdict` | `JudgeError` | `judge.evaluated` |
+| `evaluate` | `(response: str, context: str = "", spec: str = "", acceptance_criteria: list[str] \| None = None) -> Verdict` | `Verdict` | `JudgeError` | `judge.evaluated` |
 | `score` | `(response: str, rubric: Rubric) -> Score` | `Score` | `JudgeError` | — |
 | `route` | `(verdict: Verdict) -> RouteAction` | `RouteAction` | — | `judge.routed` |
 
 **Parameters:**
 - `response: str` — response to evaluate (file path or text)
-- `context: str` — context for evaluation
-- `spec: str` — spec for AC verification
+- `context: str` — context for evaluation (default: `""`)
+- `spec: str` — spec for AC verification (default: `""`)
+- `acceptance_criteria: list[str] | None` — list of AC descriptions to check coverage (default: `None`)
 - `rubric: Rubric` — rubric to score against
 - `verdict: Verdict` — verdict from evaluate()
 

@@ -748,12 +748,29 @@ class TestSpecEngineApprove(TempSpecDir):
 
     def test_approve_valid_file(self):
         path = self.engine.generate("Build something")
-        # Should not raise
         self.engine.approve(path)
+        content = path.read_text(encoding="utf-8")
+        self.assertIn("- **Approved**: true", content)
 
     def test_approve_nonexistent_file(self):
-        # approve() in v1 just checks for None, not file existence
-        self.engine.approve(Path("nonexistent.md"))
+        with self.assertRaises(SpecError):
+            self.engine.approve(Path("nonexistent.md"))
+
+    def test_approve_writes_approved_field(self):
+        path = self.engine.generate("Build a system that must validate data")
+        self.engine.approve(path)
+        content = path.read_text(encoding="utf-8")
+        self.assertIn("- **Approved**: true", content)
+
+    def test_approve_preserves_existing_content(self):
+        path = self.engine.generate("Build something with requirements")
+        original = path.read_text(encoding="utf-8")
+        self.engine.approve(path)
+        updated = path.read_text(encoding="utf-8")
+        # Approved line added, but original content preserved
+        self.assertIn("- **Approved**: true", updated)
+        self.assertIn("# Goals Specification", updated)
+        self.assertIn("## Requirements", updated)
 
 
 class TestSpecEngineParse(TempSpecDir):

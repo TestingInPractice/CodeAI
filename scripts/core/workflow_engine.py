@@ -15,8 +15,10 @@ from scripts.core.errors import WorkflowError
 from scripts.core.workflow.invariants import (
     check_completed_requires_all_tasks,
     check_complete_requires_all_phases,
+    check_pending_no_completed_tasks,
     check_phase_dependencies,
     check_single_active_phase,
+    check_task_cycle_after_decompose,
 )
 from scripts.core.workflow.state import PhaseState, TaskState, WorkflowState
 
@@ -35,12 +37,15 @@ class WorkflowEngine:
         rollback(phase, reason)
 
     Invariants:
-        INV1: Only one phase can be active at a time
+        INV1: implement-spec-stage cannot be active without tasks
         INV2: Phase dependencies must be completed
         INV3: Completed phase requires all tasks completed
         INV4: Pending phase cannot have completed tasks
         INV5: task_cycle cannot start until decompose is completed
         INV6: Complete cannot happen until all phases are completed
+
+    Guards (not invariants):
+        G1: Only one phase can be active at a time (concurrency guard)
 
     Persistence:
         Handled externally via WorkflowRepository.
@@ -105,7 +110,26 @@ class WorkflowEngine:
                     context={"phase_id": phase, "dependency": dep_id, "dep_status": dep.status.value},
                 )
 
-        # Check single active phase
+        # Check INV1: implement-spec-stage requires tasks
+        if "implement" in phase.lower() and not phase_obj.tasks:
+            raise WorkflowError(
+                f"Cannot start phase '{phase}': implement-spec-stage requires tasks (INV1)",
+                code="WF_INV1_NO_TASKS",
+                recoverable=True,
+                context={"phase_id": phase},
+            )
+
+        # Check INV5: task_cycle requires decompose completed
+        if "task_cycle" in phase.lower():
+            if not check_task_cycle_after_decompose(self._state, phase):
+                raise WorkflowError(
+                    f"Cannot start phase '{phase}': task_cycle requires decompose completed (INV5)",
+                    code="WF_INV5_DECOMPOSE_PENDING",
+                    recoverable=True,
+                    context={"phase_id": phase},
+                )
+
+        # Check single active phase (concurrency guard)
         if self._state.current_phase is not None:
             raise WorkflowError(
                 f"Cannot start phase '{phase}': phase '{self._state.current_phase.id}' is already active",
@@ -264,6 +288,15 @@ class WorkflowEngine:
         # Reset all tasks in phase
         for task in phase_obj.tasks:
             task.status = TaskStatus.PENDING
+
+        # Check INV4: pending phase cannot have completed tasks (defensive guard)
+        if not check_pending_no_completed_tasks(phase_obj):
+            raise WorkflowError(
+                f"INV4 violated: pending phase '{phase}' has completed tasks after rollback",
+                code="WF_INV4_PENDING_COMPLETED_TASKS",
+                recoverable=False,
+                context={"phase_id": phase},
+            )
 
         # Clear current state if this was the active phase
         if self._state.current_phase is not None and self._state.current_phase.id == phase:

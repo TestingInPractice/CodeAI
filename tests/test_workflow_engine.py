@@ -303,5 +303,54 @@ class TestWorkflowStateIdentity(unittest.TestCase):
         self.assertIs(Canonical, FromInit)
 
 
+# ── INV1 / INV4 / INV5 ───────────────────────────────────────────
+
+class TestInvariants(unittest.TestCase):
+    """Tests for INV1, INV4, INV5 enforcement (Issue #27)."""
+
+    def test_inv1_implement_without_tasks(self):
+        """INV1: implement-spec-stage cannot start without tasks."""
+        p = make_phase("implement-spec-stage", tasks=0)
+        engine = make_engine([p])
+        with self.assertRaises(WorkflowError) as ctx:
+            engine.start("implement-spec-stage")
+        self.assertEqual(ctx.exception.code, "WF_INV1_NO_TASKS")
+
+    def test_inv1_implement_with_tasks(self):
+        """INV1: implement-spec-stage starts when tasks exist."""
+        p = make_phase("implement-spec-stage", tasks=2)
+        engine = make_engine([p])
+        engine.start("implement-spec-stage")
+        self.assertEqual(p.status, PhaseStatus.IN_PROGRESS)
+
+    def test_inv5_task_cycle_before_decompose(self):
+        """INV5: task_cycle cannot start before decompose is completed (no deps declared)."""
+        decompose = make_phase("decompose", tasks=1)
+        task_cycle = make_phase("task_cycle", tasks=1)
+        engine = make_engine([decompose, task_cycle])
+        with self.assertRaises(WorkflowError) as ctx:
+            engine.start("task_cycle")
+        self.assertEqual(ctx.exception.code, "WF_INV5_DECOMPOSE_PENDING")
+
+    def test_inv5_task_cycle_after_decompose(self):
+        """INV5: task_cycle starts after decompose is completed."""
+        decompose = make_phase("decompose", tasks=1)
+        decompose.status = PhaseStatus.COMPLETED
+        task_cycle = make_phase("task_cycle", tasks=1, deps=["decompose"])
+        engine = make_engine([decompose, task_cycle])
+        engine.start("task_cycle")
+        self.assertEqual(task_cycle.status, PhaseStatus.IN_PROGRESS)
+
+    def test_inv4_rollback_resets_completed_tasks(self):
+        """INV4: after rollback, pending phase has no completed tasks."""
+        p = make_phase("p1", tasks=2)
+        engine = make_engine([p])
+        engine.start("p1")
+        complete_all_tasks(p)
+        engine.rollback("p1", reason="retry")
+        self.assertTrue(all(t.status == TaskStatus.PENDING for t in p.tasks))
+        self.assertFalse(any(t.status == TaskStatus.COMPLETED for t in p.tasks))
+
+
 if __name__ == "__main__":
     unittest.main()

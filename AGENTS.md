@@ -27,7 +27,7 @@ Use this as a knowledge source when working on external projects.
 
 ### 03. OpenCode & Agent Configuration
 - `scripts/build-loop/docs/03-opencode-config/` — AGENTS.md/CLAUDE.md howto, примеры, гайды
-- `docs/opencode-docs/` — полная OpenCode документация (01-29)
+- `docs/opencode-docs/` — полная OpenCode документация (01-44)
 - `docs/opencode-docs/30-agentsmd.md` — AGENTS.md формат
 - `docs/opencode-docs/31-agents-ecosystem-comparison.md` — сравнение AGENTS.md/CLAUDE.md/GEMINI.md
 - `docs/opencode-docs/37-agentsmd-opencode.md` — AGENTS.md в OpenCode
@@ -55,7 +55,6 @@ Use this as a knowledge source when working on external projects.
 - `docs/skills/` — Azure SDK skills (Python, TS, Java, .NET, Rust, Foundry)
 
 ### 07. Статьи и референсы
-- `scripts/build-loop/docs/01-frameworks/2025-06-07_AI-news-digest.md` — AI дайджест
 - `scripts/build-loop/docs/02-mcp/obsidian-hybrid-search-ohs.md` — OHS MCP
 - `scripts/build-loop/docs/03-opencode-config/AGENTS-md-examples-gist.md` — AGENTS.md examples
 - `scripts/build-loop/docs/03-opencode-config/opencode-project-guide-datatalks.md` — datatalks гайд
@@ -136,7 +135,7 @@ gstack /spec
 
 После заполнения:
 ```
-python3 scripts/evaluate_judge.py prepare \
+python3 scripts/build-loop/workflow-template/scripts/evaluate_judge.py prepare \
   --rubric scripts/build-loop/workflow-template/judge-rubrics/analyst.json \
   --spec docs/specs/goals.md \
   --tasks-dir "" \
@@ -163,7 +162,7 @@ bash scripts/build-loop/decompose.sh --project .
 
 Запусти судью над декомпозицией:
 ```
-python3 scripts/evaluate_judge.py prepare \
+python3 scripts/build-loop/workflow-template/scripts/evaluate_judge.py prepare \
   --rubric scripts/build-loop/workflow-template/judge-rubrics/analyst.json \
   --spec docs/specs/goals.md
 ```

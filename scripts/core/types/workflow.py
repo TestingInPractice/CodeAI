@@ -1,4 +1,15 @@
-"""CodeAI Platform — Workflow Engine types."""
+"""CodeAI Platform — Workflow Engine types.
+
+Compatibility re-export module. The canonical workflow models live in:
+    scripts.core.workflow.state  (WorkflowState, PhaseState, TaskState, JudgeState)
+
+This module re-exports them for backward-compatible imports:
+    from scripts.core.types.workflow import WorkflowState
+
+Lazy re-exports via __getattr__ avoid circular imports:
+    types/workflow.py → workflow/state.py → workflow/__init__.py
+    → workflow_repository.py → repositories/base.py → types/workflow.py
+"""
 
 from __future__ import annotations
 
@@ -10,6 +21,10 @@ from uuid import UUID
 from scripts.core.enums import PhaseStatus, TaskStatus, WorkflowStatus
 from scripts.core.serialization import Serializable
 from scripts.core.types.judge import Verdict
+
+
+# Canonical workflow state models — lazy re-exports to avoid circular import
+_CANONICAL_NAMES = frozenset({"WorkflowState", "PhaseState", "TaskState", "JudgeState"})
 
 
 @dataclass
@@ -35,16 +50,6 @@ class Phase(Serializable):
     depends_on: list[str] = field(default_factory=list)
     tasks: list[Task] = field(default_factory=list)
     judge_passed: bool = False
-
-
-@dataclass
-class WorkflowState(Serializable):
-    """Current state of the workflow pipeline."""
-    current_phase: Phase | None = None
-    phases: list[Phase] = field(default_factory=list)
-    current_task: Task | None = None
-    started_at: datetime | None = None
-    updated_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -129,3 +134,15 @@ class WorkflowSnapshot(Serializable):
             judge_verdict=verdict,
             rollback_stack=stack,
         )
+
+
+def __getattr__(name: str):
+    """Lazy re-export of canonical workflow state models.
+
+    Avoids circular import: types/workflow.py → workflow/state.py
+    → workflow/__init__.py → repositories → types/workflow.py
+    """
+    if name in _CANONICAL_NAMES:
+        from scripts.core.workflow import state as _state
+        return getattr(_state, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

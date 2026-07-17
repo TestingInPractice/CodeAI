@@ -38,7 +38,16 @@ from scripts.core.types.spec import (
     StructuredSpec,
     ValidationResult,
 )
-from scripts.core.types.workflow import Phase, RollbackEntry, Task, WorkflowSnapshot, WorkflowState
+from scripts.core.types.workflow import (
+    JudgeState,
+    Phase,
+    PhaseState,
+    RollbackEntry,
+    Task,
+    TaskState,
+    WorkflowSnapshot,
+    WorkflowState,
+)
 
 __all__ = [
     # enums
@@ -69,6 +78,9 @@ __all__ = [
     "Task",
     "Phase",
     "WorkflowState",
+    "PhaseState",
+    "TaskState",
+    "JudgeState",
     "RollbackEntry",
     "WorkflowSnapshot",
     # ooda

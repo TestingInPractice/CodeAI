@@ -269,5 +269,39 @@ class TestLifecycle(unittest.TestCase):
         self.assertEqual(p1.status, PhaseStatus.COMPLETED)
 
 
+class TestWorkflowStateIdentity(unittest.TestCase):
+    """Regression: ensure one canonical WorkflowState class.
+
+    Issue #23 — duplicate WorkflowState definitions.
+    The canonical model lives in scripts.core.workflow.state.
+    scripts.core.types.workflow must re-export the same object.
+    """
+
+    def test_types_reexports_same_class(self):
+        from scripts.core.workflow.state import WorkflowState as Canonical
+        from scripts.core.types.workflow import WorkflowState as Reexport
+        self.assertIs(Canonical, Reexport)
+
+    def test_types_reexports_phase_state(self):
+        from scripts.core.workflow.state import PhaseState
+        from scripts.core.types.workflow import PhaseState as Reexport
+        self.assertIs(PhaseState, Reexport)
+
+    def test_types_reexports_task_state(self):
+        from scripts.core.workflow.state import TaskState
+        from scripts.core.types.workflow import TaskState as Reexport
+        self.assertIs(TaskState, Reexport)
+
+    def test_types_reexports_judge_state(self):
+        from scripts.core.workflow.state import JudgeState
+        from scripts.core.types.workflow import JudgeState as Reexport
+        self.assertIs(JudgeState, Reexport)
+
+    def test_top_level_init_reexports(self):
+        from scripts.core.workflow.state import WorkflowState as Canonical
+        from scripts.core.types import WorkflowState as FromInit
+        self.assertIs(Canonical, FromInit)
+
+
 if __name__ == "__main__":
     unittest.main()
